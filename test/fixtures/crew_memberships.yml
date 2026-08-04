@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  boat: one
+  role: 1
+  status: 1
+
+two:
+  user: two
+  boat: two
+  role: 1
+  status: 1
