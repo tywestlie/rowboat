@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  boat_type: MyString
+  length_feet: 9.99
+  home_port: MyString
+  description: MyText
+  owner: one
+
+two:
+  name: MyString
+  boat_type: MyString
+  length_feet: 9.99
+  home_port: MyString
+  description: MyText
+  owner: two
