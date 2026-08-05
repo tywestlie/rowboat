@@ -11,7 +11,7 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "app" {
-  name        = "${var.app_name}-tg"
+  name_prefix = "rwbt-"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
@@ -24,6 +24,10 @@ resource "aws_lb_target_group" "app" {
     timeout             = 5
     interval            = 30
     matcher             = "200"
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 
   tags = {

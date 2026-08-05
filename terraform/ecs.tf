@@ -54,3 +54,73 @@ resource "aws_iam_role" "ecs_task" {
     Version = "2012-10-17"
     Statement = [{
       Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/ecs/${var.app_name}"
+  retention_in_days = 7
+}
+
+resource "aws_ecs_task_definition" "app" {
+  family                   = "${var.app_name}-task"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_execution.arn
+  task_role_arn             = aws_iam_role.ecs_task.arn
+
+  runtime_platform {
+    cpu_architecture        = "X86_64"
+    operating_system_family = "LINUX"
+  }
+
+  container_definitions = jsonencode([
+    {
+      name      = "${var.app_name}-web"
+      image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/rowboat-web:latest"
+      essential = true
+
+      portMappings = [
+        { containerPort = 3000, protocol = "tcp" }
+      ]
+
+      environment = [
+        { name = "RAILS_ENV", value = "production" },
+        { name = "HTTP_PORT", value = "3000" },
+        { name = "TARGET_PORT", value = "3001" },
+        { name = "DATABASE_HOST", value = aws_db_instance.main.address },
+        { name = "DATABASE_NAME", value = var.db_name },
+        { name = "DATABASE_USERNAME", value = var.db_username }
+      ]
+
+      secrets = [
+        {
+          name      = "ROWBOAT_DATABASE_PASSWORD"
+          valueFrom = aws_secretsmanager_secret.db_password.arn
+        },
+        {
+          name      = "RAILS_MASTER_KEY"
+          valueFrom = aws_secretsmanager_secret.rails_master_key.arn
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.app.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+
+  tags = {
+    Name = "${var.app_name}-task"
+  }
+}
