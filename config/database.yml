@@ -90,6 +90,7 @@ production:
     database: rowboat_production
     username: rowboat
     password: <%= ENV["ROWBOAT_DATABASE_PASSWORD"] %>
+    host: <%= ENV["DATABASE_HOST"] %>
   cache:
     <<: *primary_production
     database: rowboat_production_cache

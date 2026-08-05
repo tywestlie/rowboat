@@ -39,3 +39,9 @@ variable "db_username" {
   type        = string
   default     = "rowboat"
 }
+
+variable "rails_master_key" {
+  description = "Rails master key for decrypting credentials"
+  type        = string
+  sensitive   = true
+}
