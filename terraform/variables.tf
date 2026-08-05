@@ -45,3 +45,8 @@ variable "rails_master_key" {
   type        = string
   sensitive   = true
 }
+
+variable "github_repo" {
+  description = "GitHub repo in owner/name format, for OIDC trust scoping"
+  type        = string
+}
