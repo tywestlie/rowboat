@@ -438,6 +438,7 @@ DEPENDENCIES
   rails (~> 8.1.2)
   rspec-rails
   rubocop-rails-omakase
+  ruby-vips (~> 2.0)
   selenium-webdriver
   shoulda-matchers
   solid_cable
