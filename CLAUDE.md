@@ -1,0 +1,85 @@
+# Project Context
+
+This file gives Claude Code persistent context about this project. It's read automatically at the start of every session.
+
+## What this app is
+
+An AI-powered data explorer for public astronomy datasets. Users import real data from public APIs, then (eventually) ask natural-language questions about it and get back structured answers and visualizations.
+
+The repo/app is currently named "rowboat" (a leftover pun: "row" as in CSV rows, "boat" completing the word). A rename is planned but not yet done, current naming favorite under consideration: "Parallax" or a pun variant that keeps the "row" wordplay (e.g. "Rowllax"). Don't rename anything unprompted, just be aware the current name is provisional.
+
+## Current architecture
+
+- Ruby on Rails 8.1, PostgreSQL, RSpec (not Minitest, was migrated deliberately)
+- Deployed on AWS: ECS Fargate, RDS, ALB, all defined in `terraform/`
+- CI/CD via GitHub Actions: `ci.yml` (tests/lint/security scans) triggers automatically, `deploy.yml` triggers via `workflow_run` after CI passes on `main`
+- Dependabot configured with auto-merge for patch/minor bumps only; major bumps require manual review (this already caught a real breaking change once, don't loosen this)
+
+## Data model
+
+```
+Dataset
+  - name, source_url, imported_at, row_count
+  - has_many :dataset_columns, :dataset_rows, :queries
+
+DatasetColumn
+  - belongs_to :dataset
+  - name, display_name, data_type, position
+
+DatasetRow
+  - belongs_to :dataset
+  - data (jsonb — flexible schema per dataset, deliberate choice)
+
+Query
+  - belongs_to :dataset
+  - question, generated_query (jsonb), result_summary
+```
+
+**Known tradeoff, deliberately deferred**: `dataset_rows.data` is a jsonb blob with no per-field types (everything comes in as strings from CSV import). This makes numeric filtering/aggregation require explicit casts (`(data->>'pl_rade')::float`), which is more fragile for LLM-generated queries than typed columns would be. Decided to keep this simple for now and revisit once the query feature's actual needs are clearer, don't unprompted refactor to per-dataset typed tables without discussing it first, this was an explicit, considered decision.
+
+No `User` model currently exists. Auth was deliberately deferred until the core AI-query feature works. Don't add auth unprompted.
+
+## What's built and working
+
+- `ImportExoplanetsJob` (`app/jobs/import_exoplanets_job.rb`) — pulls live data from NASA's Exoplanet Archive (PSCompPars table), confirmed working, imports ~6,300 real rows
+- Rake task `datasets:import_exoplanets` to trigger it
+- ECS Exec is enabled for production debugging (`dangerzone` / `dangerzone-bash` bash functions in `~/.bashrc` exec into the live task)
+
+## What's next (in planned order)
+
+1. **In progress**: `DatasetsController` with `index` (list datasets) and `show` (paginated raw data table) actions, using `kaminari` for pagination. Routes: `resources :datasets, only: [:index, :show]`
+2. NeoWs (Near Earth Object) importer — second data source, JSON-based (needs flattening, unlike the clean CSV exoplanet source)
+3. The actual AI query feature: natural language question → LLM translates to a structured query (filter/aggregate spec, NOT raw SQL, this was a deliberate choice, "Option A" in earlier planning) → execute against `dataset_rows` → return answer + visualization
+4. A separate ECS service for Solid Queue background job processing (not yet built — currently jobs would need `perform_now` or a locally-run `bin/jobs`, no worker exists in production yet)
+
+## Conventions and preferences
+
+- No em dashes in written content (docs, commit messages, comments)
+- Prefer complete file contents over partial diffs when discussing code changes
+- Concise, direct communication preferred generally
+- Terraform changes: always show `terraform plan` output before applying
+- Docker builds: this project has been bitten before by `docker run` using a stale local image instead of pulling fresh from a registry, and by ECS tasks not picking up a new `:latest` image without an explicit `force-new-deployment`. Verify pushed image digests match what's actually running when deploy issues come up.
+
+## Local dev
+
+```bash
+docker compose up
+```
+
+System deps if running outside Docker: `libpq-dev`, `libvips` (required by `image_processing` 2.x / Active Storage).
+
+```bash
+bundle exec rspec        # tests
+bin/rubocop -a           # autofix lint
+bin/brakeman --no-pager  # security scan
+bin/bundler-audit        # dependency vuln scan
+```
+
+## Deployment
+
+```bash
+cd terraform
+terraform apply
+```
+
+Day-to-day pause/resume uses partial scale-down (ECS desired-count 0, RDS stopped), NOT full `terraform destroy`, since a full destroy recreates the ALB with a new DNS name and requires updating the Cloudflare CNAME record manually each time. See `pause-resume-runbook.md` for the exact commands.

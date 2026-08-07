@@ -1,0 +1,28 @@
+<% content_for :title, "Datasets" %>
+
+<div class="datasets-index">
+  <h1>Datasets</h1>
+
+  <% if @datasets.any? %>
+    <table class="datasets-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Rows</th>
+          <th>Imported</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @datasets.each do |dataset| %>
+          <tr>
+            <td><%= link_to dataset.name, dataset_path(dataset) %></td>
+            <td><%= number_with_delimiter(dataset.row_count) %></td>
+            <td><%= dataset.imported_at&.to_fs(:long) || "Never" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="empty-state">No datasets have been imported yet.</p>
+  <% end %>
+</div>
