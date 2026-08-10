@@ -1,22 +1,28 @@
 <% content_for :title, "Extremes: #{@dataset.name}" %>
 
-<div class="dataset-extremes">
-  <p><%= link_to "← #{@dataset.name}", dataset_path(@dataset) %></p>
-  <h1>Extremes leaderboard</h1>
+<div class="flex flex-col gap-8">
+  <div class="flex flex-col gap-2">
+    <p>
+      <%= link_to "← #{@dataset.name}", dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+    </p>
+    <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Extremes leaderboard</h1>
+  </div>
 
   <% @leaderboards.each do |title, rows| %>
-    <section class="leaderboard">
-      <h2><%= title %></h2>
+    <section class="flex flex-col gap-3">
+      <h2 class="font-display text-lg font-semibold text-signal sm:text-xl"><%= title %></h2>
 
       <% if rows.empty? %>
-        <p class="empty-state">No data available.</p>
+        <p class="italic text-muted">No data available.</p>
       <% else %>
-        <ol>
+        <ol class="overflow-hidden rounded-lg border border-grid-line bg-panel">
           <% rows.each do |row| %>
-            <li>
+            <li class="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-grid-line px-4 py-3 text-sm last:border-b-0">
               <% @columns.each do |column| %>
-                <span class="field">
-                  <%= column.display_name.presence || column.name %>: <%= row.data[column.name] %>
+                <% numeric = column.data_type.in?(%w[integer float]) %>
+                <span>
+                  <span class="text-muted"><%= column.display_name.presence || column.name %>:</span>
+                  <span class="text-signal <%= numeric ? "font-mono" : "" %>"><%= row.data[column.name] %></span>
                 </span>
               <% end %>
             </li>

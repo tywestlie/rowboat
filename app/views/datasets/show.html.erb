@@ -1,33 +1,41 @@
 <% content_for :title, @dataset.name %>
 
-<div class="dataset-show">
-  <p><%= link_to "← All datasets", datasets_path %></p>
-  <h1><%= @dataset.name %></h1>
-  <p class="dataset-meta">
-    <%= number_with_delimiter(@dataset.row_count) %> rows
-    &middot; imported <%= @dataset.imported_at&.to_fs(:long) || "never" %>
-    <% if @dataset.safe_source_url %>
-      &middot; <%= link_to "source", @dataset.safe_source_url %>
-    <% end %>
+<div class="flex flex-col gap-6">
+  <p>
+    <%= link_to "← All datasets", datasets_path, class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
   </p>
 
-  <p class="dataset-actions">
-    <%= link_to "Surprise me", random_dataset_path(@dataset) %>
-    &middot;
-    <%= link_to "Extremes leaderboard", extremes_dataset_path(@dataset) %>
+  <div class="flex flex-col gap-2">
+    <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl"><%= @dataset.name %></h1>
+    <p class="text-muted">
+      <%= number_with_delimiter(@dataset.row_count) %> rows
+      &middot; imported <%= @dataset.imported_at&.to_fs(:long) || "never" %>
+      <% if @dataset.safe_source_url %>
+        &middot; <%= link_to "source", @dataset.safe_source_url, class: "text-amber hover:underline" %>
+      <% end %>
+    </p>
+  </div>
+
+  <p class="flex flex-wrap items-center gap-x-3 gap-y-2">
+    <%= link_to "Surprise me", random_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+    <span class="text-muted">&middot;</span>
+    <%= link_to "Extremes leaderboard", extremes_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
   </p>
 
   <% if @columns.empty? %>
-    <p class="empty-state">This dataset has no columns defined.</p>
+    <p class="italic text-muted">This dataset has no columns defined.</p>
   <% elsif @rows.empty? %>
-    <p class="empty-state">This dataset has no rows.</p>
+    <p class="italic text-muted">This dataset has no rows.</p>
   <% else %>
-    <div class="dataset-rows-wrapper">
-      <table class="dataset-rows-table">
+    <div class="overflow-x-auto rounded-lg border border-grid-line bg-panel">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
         <thead>
           <tr>
             <% @columns.each do |column| %>
-              <th><%= column.display_name.presence || column.name %></th>
+              <% numeric = column.data_type.in?(%w[integer float]) %>
+              <th class="border-b border-grid-line px-4 py-3 <%= numeric ? "text-right" : "text-left" %> text-xs font-medium uppercase tracking-wider text-muted">
+                <%= column.display_name.presence || column.name %>
+              </th>
             <% end %>
           </tr>
         </thead>
@@ -35,7 +43,10 @@
           <% @rows.each do |row| %>
             <tr>
               <% @columns.each do |column| %>
-                <td><%= row.data[column.name] %></td>
+                <% numeric = column.data_type.in?(%w[integer float]) %>
+                <td class="border-b border-grid-line px-4 py-2 <%= numeric ? "text-right font-mono" : "" %> text-signal">
+                  <%= row.data[column.name] %>
+                </td>
               <% end %>
             </tr>
           <% end %>

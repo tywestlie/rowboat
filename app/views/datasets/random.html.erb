@@ -1,21 +1,26 @@
 <% content_for :title, "Random #{@dataset.name}" %>
 
-<div class="dataset-random">
-  <p><%= link_to "← #{@dataset.name}", dataset_path(@dataset) %></p>
-  <h1>Surprise me</h1>
+<div class="flex flex-col gap-6">
+  <p>
+    <%= link_to "← #{@dataset.name}", dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+  </p>
+  <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Surprise me</h1>
 
   <% if @row.nil? %>
-    <p class="empty-state">This dataset has no rows.</p>
+    <p class="italic text-muted">This dataset has no rows.</p>
   <% else %>
-    <div class="row-card">
-      <dl>
+    <div class="rounded-lg border border-grid-line bg-panel p-4 sm:p-6">
+      <dl class="divide-y divide-grid-line">
         <% @columns.each do |column| %>
-          <dt><%= column.display_name.presence || column.name %></dt>
-          <dd><%= @row.data[column.name] %></dd>
+          <% numeric = column.data_type.in?(%w[integer float]) %>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+            <dt class="text-xs font-medium uppercase tracking-wider text-muted"><%= column.display_name.presence || column.name %></dt>
+            <dd class="text-signal <%= numeric ? "font-mono" : "" %> sm:text-right"><%= @row.data[column.name] %></dd>
+          </div>
         <% end %>
       </dl>
     </div>
 
-    <%= link_to "Surprise me again", random_dataset_path(@dataset) %>
+    <%= link_to "Surprise me again", random_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
   <% end %>
 </div>
