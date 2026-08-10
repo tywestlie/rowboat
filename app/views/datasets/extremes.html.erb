@@ -1,0 +1,28 @@
+<% content_for :title, "Extremes: #{@dataset.name}" %>
+
+<div class="dataset-extremes">
+  <p><%= link_to "← #{@dataset.name}", dataset_path(@dataset) %></p>
+  <h1>Extremes leaderboard</h1>
+
+  <% @leaderboards.each do |title, rows| %>
+    <section class="leaderboard">
+      <h2><%= title %></h2>
+
+      <% if rows.empty? %>
+        <p class="empty-state">No data available.</p>
+      <% else %>
+        <ol>
+          <% rows.each do |row| %>
+            <li>
+              <% @columns.each do |column| %>
+                <span class="field">
+                  <%= column.display_name.presence || column.name %>: <%= row.data[column.name] %>
+                </span>
+              <% end %>
+            </li>
+          <% end %>
+        </ol>
+      <% end %>
+    </section>
+  <% end %>
+</div>

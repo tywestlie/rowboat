@@ -11,6 +11,12 @@
     <% end %>
   </p>
 
+  <p class="dataset-actions">
+    <%= link_to "Surprise me", random_dataset_path(@dataset) %>
+    &middot;
+    <%= link_to "Extremes leaderboard", extremes_dataset_path(@dataset) %>
+  </p>
+
   <% if @columns.empty? %>
     <p class="empty-state">This dataset has no columns defined.</p>
   <% elsif @rows.empty? %>
