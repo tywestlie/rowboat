@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :dataset_row do
-    dataset { nil }
-    data { "" }
+    dataset
+    data { { "column_1" => "value" } }
   end
 end

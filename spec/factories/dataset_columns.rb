@@ -1,9 +1,9 @@
 FactoryBot.define do
   factory :dataset_column do
-    dataset { nil }
-    name { "MyString" }
-    display_name { "MyString" }
-    data_type { "MyString" }
-    position { 1 }
+    dataset
+    sequence(:name) { |n| "column_#{n}" }
+    sequence(:display_name) { |n| "Column #{n}" }
+    data_type { "string" }
+    sequence(:position) { |n| n }
   end
 end

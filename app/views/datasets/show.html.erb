@@ -1,0 +1,42 @@
+<% content_for :title, @dataset.name %>
+
+<div class="dataset-show">
+  <p><%= link_to "← All datasets", datasets_path %></p>
+  <h1><%= @dataset.name %></h1>
+  <p class="dataset-meta">
+    <%= number_with_delimiter(@dataset.row_count) %> rows
+    &middot; imported <%= @dataset.imported_at&.to_fs(:long) || "never" %>
+    <% if @dataset.safe_source_url %>
+      &middot; <%= link_to "source", @dataset.safe_source_url %>
+    <% end %>
+  </p>
+
+  <% if @columns.empty? %>
+    <p class="empty-state">This dataset has no columns defined.</p>
+  <% elsif @rows.empty? %>
+    <p class="empty-state">This dataset has no rows.</p>
+  <% else %>
+    <div class="dataset-rows-wrapper">
+      <table class="dataset-rows-table">
+        <thead>
+          <tr>
+            <% @columns.each do |column| %>
+              <th><%= column.display_name.presence || column.name %></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% @rows.each do |row| %>
+            <tr>
+              <% @columns.each do |column| %>
+                <td><%= row.data[column.name] %></td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%= paginate @rows %>
+  <% end %>
+</div>
