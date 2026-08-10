@@ -1,0 +1,40 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "21e2144bed607cd8ce5559ad6e46ee8a552b566e766eb38f7b3defb95b0b2956",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/datasets/show.html.erb",
+      "line": 10,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(\"source\", Dataset.find(params[:id]).safe_source_url)",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "DatasetsController",
+          "method": "show",
+          "line": 10,
+          "file": "app/controllers/datasets_controller.rb",
+          "rendered": {
+            "name": "datasets/show",
+            "file": "app/views/datasets/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "datasets/show"
+      },
+      "user_input": "Dataset.find(params[:id]).safe_source_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": "Dataset#safe_source_url (app/models/dataset.rb) allowlists http/https schemes before returning the URL, so javascript: and other unsafe schemes can't reach this href. Brakeman can't trace into the method, hence the false positive."
+    }
+  ],
+  "updated": "2026-08-10 11:45:00 -0600",
+  "brakeman_version": "8.0.5"
+}

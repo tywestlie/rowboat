@@ -6,8 +6,8 @@
   <p class="dataset-meta">
     <%= number_with_delimiter(@dataset.row_count) %> rows
     &middot; imported <%= @dataset.imported_at&.to_fs(:long) || "never" %>
-    <% if @dataset.source_url.present? %>
-      &middot; <%= link_to "source", @dataset.source_url %>
+    <% if @dataset.safe_source_url %>
+      &middot; <%= link_to "source", @dataset.safe_source_url %>
     <% end %>
   </p>
 
