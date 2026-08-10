@@ -22,6 +22,21 @@
     <%= link_to "Extremes leaderboard", extremes_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
   </p>
 
+  <% if @starfield_points.present? %>
+    <div
+      data-controller="starfield"
+      data-starfield-points-value="<%= @starfield_points.to_json %>"
+      data-starfield-dataset-id-value="<%= @dataset.id %>"
+      class="relative"
+    >
+      <canvas data-starfield-target="canvas" class="block w-full rounded-lg border border-grid-line"></canvas>
+      <div
+        data-starfield-target="tooltip"
+        class="pointer-events-none fixed z-10 hidden rounded-md border border-grid-line bg-panel px-3 py-2 text-xs shadow-lg"
+      ></div>
+    </div>
+  <% end %>
+
   <% if @columns.empty? %>
     <p class="italic text-muted">This dataset has no columns defined.</p>
   <% elsif @rows.empty? %>
