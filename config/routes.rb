@@ -10,7 +10,12 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Browse imported datasets and their rows (read-only, no auth yet)
-  resources :datasets, only: [ :index, :show ]
+  resources :datasets, only: [ :index, :show ] do
+    member do
+      get :random
+      get :extremes
+    end
+  end
 
   # Defines the root path route ("/")
   root "home#index"

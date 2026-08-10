@@ -1,0 +1,21 @@
+<% content_for :title, "Random #{@dataset.name}" %>
+
+<div class="dataset-random">
+  <p><%= link_to "← #{@dataset.name}", dataset_path(@dataset) %></p>
+  <h1>Surprise me</h1>
+
+  <% if @row.nil? %>
+    <p class="empty-state">This dataset has no rows.</p>
+  <% else %>
+    <div class="row-card">
+      <dl>
+        <% @columns.each do |column| %>
+          <dt><%= column.display_name.presence || column.name %></dt>
+          <dd><%= @row.data[column.name] %></dd>
+        <% end %>
+      </dl>
+    </div>
+
+    <%= link_to "Surprise me again", random_dataset_path(@dataset) %>
+  <% end %>
+</div>
