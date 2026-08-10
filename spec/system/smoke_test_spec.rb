@@ -7,6 +7,6 @@ RSpec.describe "Smoke test", type: :system do
 
   it "loads the homepage" do
     visit root_path
-    expect(page).to have_content("Rowboat")
+    expect(page).to have_content("Parallax")
   end
 end
