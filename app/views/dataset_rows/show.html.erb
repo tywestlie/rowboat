@@ -1,0 +1,9 @@
+<% content_for :title, @dataset.name %>
+
+<div class="flex flex-col gap-6">
+  <p>
+    <%= link_to "← #{@dataset.name}", dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+  </p>
+
+  <%= render "datasets/row", row: @row, columns: @columns %>
+</div>
