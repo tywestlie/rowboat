@@ -83,3 +83,17 @@ terraform apply
 ```
 
 Day-to-day pause/resume uses partial scale-down (ECS desired-count 0, RDS stopped), NOT full `terraform destroy`, since a full destroy recreates the ALB with a new DNS name and requires updating the Cloudflare CNAME record manually each time. See `pause-resume-runbook.md` for the exact commands.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (tywestlie/rowboat), via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical labels used as-is (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
