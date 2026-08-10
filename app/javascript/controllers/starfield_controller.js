@@ -12,8 +12,23 @@ const MAX_RADIUS = 8
 const HIT_RADIUS = 12
 const RESIZE_DEBOUNCE_MS = 150
 const LOG_SCALE_MIN = 1
-const POINT_BASE_ALPHA_MIN = 0.15
-const POINT_BASE_ALPHA_MAX = 0.3
+const POINT_BASE_ALPHA_MIN = 0.1
+const POINT_BASE_ALPHA_MAX = 0.22
+const GLOW_RADIUS_MULTIPLIER = 3
+
+const generateLogTicks = (scale) => {
+  const [min, max] = scale.domain()
+  const startExp = Math.floor(Math.log10(min))
+  const endExp = Math.ceil(Math.log10(max))
+  const candidates = []
+
+  for (let exp = startExp; exp <= endExp; exp++) {
+    const base = 10 ** exp
+    candidates.push(base, base * 5)
+  }
+
+  return candidates.filter((value) => value >= min && value <= max)
+}
 
 export default class extends Controller {
   static targets = ["canvas", "tooltip"]
@@ -132,7 +147,7 @@ export default class extends Controller {
 
     ctx.textAlign = "center"
     ctx.textBaseline = "top"
-    for (const tick of xScale.ticks(6)) {
+    for (const tick of generateLogTicks(xScale)) {
       const x = xScale(tick)
 
       ctx.strokeStyle = GRID_LINE
@@ -148,7 +163,7 @@ export default class extends Controller {
 
     ctx.textAlign = "right"
     ctx.textBaseline = "middle"
-    for (const tick of yScale.ticks(6)) {
+    for (const tick of generateLogTicks(yScale)) {
       const y = yScale(tick)
 
       ctx.strokeStyle = GRID_LINE
@@ -182,18 +197,16 @@ export default class extends Controller {
   }
 
   drawPoint(ctx, point) {
-    const layers = [
-      { scale: 2.4, alpha: 0.12 * point.opacity },
-      { scale: 1.5, alpha: 0.25 * point.opacity },
-      { scale: 1, alpha: point.opacity }
-    ]
+    const glowRadius = point.r * GLOW_RADIUS_MULTIPLIER
+    const gradient = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, glowRadius)
 
-    for (const layer of layers) {
-      ctx.beginPath()
-      ctx.fillStyle = `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, ${layer.alpha})`
-      ctx.arc(point.x, point.y, point.r * layer.scale, 0, Math.PI * 2)
-      ctx.fill()
-    }
+    gradient.addColorStop(0, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, ${point.opacity})`)
+    gradient.addColorStop(1, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, 0)`)
+
+    ctx.beginPath()
+    ctx.fillStyle = gradient
+    ctx.arc(point.x, point.y, glowRadius, 0, Math.PI * 2)
+    ctx.fill()
   }
 
   findNearest(x, y) {
