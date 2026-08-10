@@ -15,6 +15,8 @@ Rails.application.routes.draw do
       get :random
       get :extremes
     end
+
+    resources :rows, only: [ :show ], controller: "dataset_rows"
   end
 
   # Defines the root path route ("/")

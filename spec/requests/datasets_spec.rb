@@ -56,6 +56,48 @@ RSpec.describe "Datasets", type: :request do
       expect(response.body).to include(extremes_dataset_path(dataset))
     end
 
+    context "starfield visualization" do
+      before do
+        create(:dataset_column, dataset: dataset, name: "pl_rade", display_name: "Radius", data_type: "float", position: 2)
+        create(:dataset_column, dataset: dataset, name: "sy_dist", display_name: "Distance", data_type: "float", position: 3)
+        create(:dataset_column, dataset: dataset, name: "pl_eqt", display_name: "Temperature", data_type: "float", position: 4)
+      end
+
+      it "does not render the starfield canvas when required columns are absent" do
+        columnless_dataset = create(:dataset)
+        create(:dataset_row, dataset: columnless_dataset, data: { "pl_name" => "Kepler-442 b" })
+
+        get dataset_path(columnless_dataset)
+
+        expect(response.body).not_to include('data-controller="starfield"')
+      end
+
+      it "renders the starfield canvas with numeric points cast server-side" do
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "Kepler-442 b", "pl_rade" => "1.34", "sy_dist" => "371.0", "pl_eqt" => "233.0" })
+
+        get dataset_path(dataset)
+
+        expect(response.body).to include('data-controller="starfield"')
+        points = starfield_points(response.body)
+        expect(points).to eq([ { "id" => points.first["id"], "pl_name" => "Kepler-442 b", "pl_rade" => 1.34, "sy_dist" => 371.0, "pl_eqt" => 233.0 } ])
+      end
+
+      it "excludes rows missing any of the three required fields" do
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "Complete", "pl_rade" => "1.0", "sy_dist" => "10.0", "pl_eqt" => "300.0" })
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "Missing Distance", "pl_rade" => "1.0", "pl_eqt" => "300.0" })
+
+        get dataset_path(dataset)
+
+        names = starfield_points(response.body).map { |point| point["pl_name"] }
+        expect(names).to eq([ "Complete" ])
+      end
+    end
+
+    def starfield_points(body)
+      match = body.match(/data-starfield-points-value="([^"]*)"/)
+      JSON.parse(CGI.unescapeHTML(match[1]))
+    end
+
     context "with more than 50 rows" do
       before do
         51.times { |i| create(:dataset_row, dataset: dataset, data: { "pl_name" => "Planet #{i}", "disc_year" => "2000" }) }
