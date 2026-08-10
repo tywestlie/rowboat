@@ -84,7 +84,7 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# Security group for VPC endpoints — only accepts traffic from ECS tasks
+# Security group for VPC endpoints — only accepts traffic from ECS tasks and the worker
 resource "aws_security_group" "vpc_endpoints" {
   name        = "${var.app_name}-vpc-endpoints-sg"
   description = "Allow inbound HTTPS only from ECS tasks"
@@ -96,6 +96,14 @@ resource "aws_security_group" "vpc_endpoints" {
     to_port         = 443
     protocol        = "tcp"
     security_groups = [aws_security_group.ecs_tasks.id]
+  }
+
+  ingress {
+    description     = "HTTPS from ECS worker"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs_worker.id]
   }
 
   egress {

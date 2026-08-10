@@ -16,6 +16,7 @@ env:
   ECR_REPOSITORY: rowboat-web
   ECS_CLUSTER: rowboat-cluster
   ECS_SERVICE: rowboat-service
+  ECS_WORKER_SERVICE: rowboat-worker-service
 
 jobs:
   deploy:
@@ -51,15 +52,22 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Force new ECS deployment
+      - name: Force new ECS deployment (web)
         run: |
           aws ecs update-service \
             --cluster $ECS_CLUSTER \
             --service $ECS_SERVICE \
             --force-new-deployment
 
-      - name: Wait for service to stabilize
+      - name: Force new ECS deployment (worker)
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_WORKER_SERVICE \
+            --force-new-deployment
+
+      - name: Wait for services to stabilize
         run: |
           aws ecs wait services-stable \
             --cluster $ECS_CLUSTER \
-            --services $ECS_SERVICE
+            --services $ECS_SERVICE $ECS_WORKER_SERVICE
