@@ -1,28 +1,33 @@
 <% content_for :title, "Datasets" %>
 
-<div class="datasets-index">
-  <h1>Datasets</h1>
+<div class="flex flex-col gap-6">
+  <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Datasets</h1>
 
   <% if @datasets.any? %>
-    <table class="datasets-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Rows</th>
-          <th>Imported</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @datasets.each do |dataset| %>
+    <div class="overflow-x-auto rounded-lg border border-grid-line bg-panel">
+      <table class="w-full min-w-[480px] border-collapse text-sm">
+        <thead>
           <tr>
-            <td><%= link_to dataset.name, dataset_path(dataset) %></td>
-            <td><%= number_with_delimiter(dataset.row_count) %></td>
-            <td><%= dataset.imported_at&.to_fs(:long) || "Never" %></td>
+            <th class="border-b border-grid-line px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Name</th>
+            <th class="border-b border-grid-line px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted">Rows</th>
+            <th class="border-b border-grid-line px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Imported</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% @datasets.each do |dataset| %>
+            <tr>
+              <td class="border-b border-grid-line px-4 py-3 text-signal">
+                <%= link_to dataset.name, dataset_path(dataset),
+                      class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+              </td>
+              <td class="border-b border-grid-line px-4 py-3 text-right font-mono text-signal"><%= number_with_delimiter(dataset.row_count) %></td>
+              <td class="border-b border-grid-line px-4 py-3 text-muted"><%= dataset.imported_at&.to_fs(:long) || "Never" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
   <% else %>
-    <p class="empty-state">No datasets have been imported yet.</p>
+    <p class="italic text-muted">No datasets have been imported yet.</p>
   <% end %>
 </div>

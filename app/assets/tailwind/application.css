@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --color-space-navy: #0b1220;
+  --color-panel: #131b2e;
+  --color-grid-line: #24314a;
+  --color-signal: #e8ecf4;
+  --color-muted: #8793aa;
+  --color-amber: #ffb300;
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer components {
+  .pagination {
+    @apply mt-6 flex flex-wrap items-center gap-2 font-mono text-sm;
+  }
+
+  .pagination .page,
+  .pagination .prev,
+  .pagination .next,
+  .pagination .first,
+  .pagination .last {
+    @apply inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-grid-line px-3 text-muted;
+  }
+
+  .pagination .page a,
+  .pagination .prev a,
+  .pagination .next a,
+  .pagination .first a,
+  .pagination .last a {
+    @apply flex min-h-11 min-w-11 items-center justify-center text-signal hover:text-amber;
+  }
+
+  .pagination .page.current {
+    @apply border-amber text-amber;
+  }
+
+  .pagination .gap {
+    @apply text-muted;
+  }
+}
