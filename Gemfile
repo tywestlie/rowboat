@@ -20,6 +20,7 @@ gem "jbuilder"
 gem "ruby-vips", "~> 2.0"
 
 gem "csv"
+gem "pry"
 
 # Pagination for dataset row browsing [https://github.com/kaminari/kaminari]
 gem "kaminari"
