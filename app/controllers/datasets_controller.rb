@@ -6,7 +6,6 @@ class DatasetsController < ApplicationController
   STARFIELD_FIELDS = %w[pl_rade sy_dist pl_eqt].freeze
   ORBITAL_PERIOD_FIELD = "pl_orbper"
   MIN_MULTI_PLANET_COUNT = 2
-  HOST_SUGGESTION_LIMIT = 25
 
   def show
     @dataset = Dataset.find(params[:id])
@@ -15,12 +14,6 @@ class DatasetsController < ApplicationController
     @rows = filtered_rows.order(:id).page(params[:page]).per(50)
     @starfield_points = starfield_points if starfield_eligible?
     @starfield_mode = system_mode? ? "system" : "sky"
-  end
-
-  def hosts
-    @dataset = Dataset.find(params[:id])
-    @columns = @dataset.dataset_columns.order(:position)
-    render json: host_suggestions
   end
 
   def systems
@@ -94,27 +87,6 @@ class DatasetsController < ApplicationController
       point[:pl_orbper] = data[ORBITAL_PERIOD_FIELD].to_f if data[ORBITAL_PERIOD_FIELD].present?
       point
     end
-  end
-
-  def host_suggestions
-    return [] unless has_hostname_column?
-
-    query = params[:q].to_s.strip
-    multi_only = params[:all] != "1"
-
-    scope = @dataset.dataset_rows
-    if query.present?
-      like_query = "%#{ActiveRecord::Base.sanitize_sql_like(query)}%"
-      scope = scope.where("data->>'hostname' ILIKE ?", like_query)
-    end
-
-    counts = scope.group(Arel.sql("data->>'hostname'")).count
-    counts = counts.select { |name, count| name.present? && count >= MIN_MULTI_PLANET_COUNT } if multi_only
-    counts = counts.reject { |name, _| name.blank? } unless multi_only
-
-    counts.sort_by { |name, _| name }
-          .first(HOST_SUGGESTION_LIMIT)
-          .map { |name, count| { hostname: name, planet_count: count } }
   end
 
   def system_counts

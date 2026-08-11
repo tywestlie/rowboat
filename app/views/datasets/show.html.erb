@@ -22,51 +22,15 @@
     <%= link_to "Extremes leaderboard", extremes_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
   </p>
 
-  <% if has_hostname_column?(@columns) %>
-    <div
-      data-controller="host-filter"
-      data-host-filter-hosts-url-value="<%= hosts_dataset_path(@dataset) %>"
-      class="flex flex-col gap-2"
-    >
-      <div class="flex flex-wrap items-center gap-3">
-        <label for="host-filter-input" class="text-sm text-muted">Host star</label>
-        <div class="relative">
-          <input
-            type="text"
-            id="host-filter-input"
-            data-host-filter-target="input"
-            data-action="input->host-filter#onInput focus->host-filter#onInput keydown->host-filter#onKeydown blur->host-filter#onBlur"
-            placeholder="All systems"
-            value="<%= @host %>"
-            autocomplete="off"
-            class="min-h-11 w-64 rounded-md border border-grid-line bg-panel px-3 text-sm text-signal placeholder:text-muted focus:border-amber focus:outline-none"
-          >
-          <ul
-            data-host-filter-target="menu"
-            class="absolute z-20 mt-1 hidden max-h-72 w-72 list-none overflow-y-auto rounded-md border border-grid-line bg-panel py-1 shadow-lg"
-          ></ul>
-        </div>
-        <label class="flex items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            data-host-filter-target="allToggle"
-            data-action="change->host-filter#onInput"
-            class="h-4 w-4 rounded border-grid-line"
-          >
-          Include single-planet systems
-        </label>
-        <% if @host %>
-          <%= link_to "Clear filter", dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
-        <% end %>
-      </div>
+  <% if @host %>
+    <div class="flex flex-col gap-2">
+      <p>
+        <%= link_to "← All systems", systems_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+      </p>
 
       <p class="text-sm text-muted">
-        <% if @host %>
-          Showing <%= number_with_delimiter(@rows.total_count) %> planet<%= "s" unless @rows.total_count == 1 %> around
-          <span class="text-signal"><%= @host %></span>
-        <% else %>
-          Showing all <%= number_with_delimiter(@dataset.row_count) %> planets
-        <% end %>
+        Showing <%= number_with_delimiter(@rows.total_count) %> planet<%= "s" unless @rows.total_count == 1 %> around
+        <span class="text-signal"><%= @host %></span>
       </p>
     </div>
   <% end %>

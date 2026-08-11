@@ -135,13 +135,14 @@ RSpec.describe "Datasets", type: :request do
       create(:dataset_row, dataset: dataset, data: { "pl_name" => "Lone World b", "hostname" => "Lone World", "pl_rade" => "1.0", "sy_dist" => "50.0", "pl_eqt" => "255.0", "pl_orbper" => "365.0" })
     end
 
-    it "shows all rows and the unfiltered count when no host param is given" do
+    it "shows all rows when no host param is given, with no host filter UI" do
       get dataset_path(dataset)
 
-      expect(response.body).to include("Showing all 3 planets")
       expect(response.body).to include("TRAPPIST-1 b")
       expect(response.body).to include("Lone World b")
       expect(response.body).to include('data-starfield-mode-value="sky"')
+      expect(response.body).not_to include('data-controller="host-filter"')
+      expect(response.body).not_to include("Include single-planet systems")
     end
 
     it "filters rows and the starfield to the selected host" do
@@ -154,44 +155,25 @@ RSpec.describe "Datasets", type: :request do
       expect(response.body).to include('data-starfield-mode-value="system"')
     end
 
+    it "does not show the host search dropdown or single-planet toggle on the filtered single-system view" do
+      get dataset_path(dataset), params: { hostname: "TRAPPIST-1" }
+
+      expect(response.body).not_to include('data-controller="host-filter"')
+      expect(response.body).not_to include("Include single-planet systems")
+    end
+
+    it "links back to the systems list from the filtered single-system view" do
+      get dataset_path(dataset), params: { hostname: "TRAPPIST-1" }
+
+      expect(response.body).to include("← All systems")
+      expect(response.body).to include(systems_dataset_path(dataset))
+    end
+
     it "shows an empty state for a host with no matches" do
       get dataset_path(dataset), params: { hostname: "Nonexistent" }
 
       expect(response.body).to include("Showing 0 planets around")
       expect(response.body).to include("This dataset has no rows.")
-    end
-  end
-
-  describe "GET /datasets/:id/hosts" do
-    let(:dataset) { create(:dataset, name: "Confirmed Exoplanets") }
-
-    before do
-      create(:dataset_column, dataset: dataset, name: "hostname", display_name: "Host Star", data_type: "string", position: 0)
-
-      create(:dataset_row, dataset: dataset, data: { "pl_name" => "TRAPPIST-1 b", "hostname" => "TRAPPIST-1" })
-      create(:dataset_row, dataset: dataset, data: { "pl_name" => "TRAPPIST-1 c", "hostname" => "TRAPPIST-1" })
-      create(:dataset_row, dataset: dataset, data: { "pl_name" => "Lone World b", "hostname" => "Lone World" })
-    end
-
-    it "defaults to multi-planet host stars only" do
-      get hosts_dataset_path(dataset)
-
-      json = JSON.parse(response.body)
-      expect(json).to eq([ { "hostname" => "TRAPPIST-1", "planet_count" => 2 } ])
-    end
-
-    it "includes single-planet host stars when all=1" do
-      get hosts_dataset_path(dataset), params: { all: "1" }
-
-      hostnames = JSON.parse(response.body).map { |entry| entry["hostname"] }
-      expect(hostnames).to contain_exactly("TRAPPIST-1", "Lone World")
-    end
-
-    it "filters by a search query" do
-      get hosts_dataset_path(dataset), params: { all: "1", q: "lone" }
-
-      json = JSON.parse(response.body)
-      expect(json).to eq([ { "hostname" => "Lone World", "planet_count" => 1 } ])
     end
   end
 

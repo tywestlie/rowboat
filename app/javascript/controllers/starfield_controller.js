@@ -12,8 +12,19 @@ const MAX_RADIUS = 5
 const HIT_RADIUS = 12
 const RESIZE_DEBOUNCE_MS = 150
 const LOG_SCALE_MIN = 1
-const POINT_BASE_ALPHA_MIN = 0.1
-const POINT_BASE_ALPHA_MAX = 0.22
+
+// The dense overview (thousands of overlapping points) relies on additive
+// blending to build up brightness, so individual points are drawn faint.
+// A single system (a handful of points, no overlap) needs the opposite:
+// bold, fully-opaque points, or they're nearly invisible. Interpolate
+// between these two alpha ranges based on how many points are on screen.
+const DENSE_ALPHA_MIN = 0.1
+const DENSE_ALPHA_MAX = 0.22
+const SPARSE_ALPHA_MIN = 0.85
+const SPARSE_ALPHA_MAX = 1
+const SPARSE_POINT_COUNT = 30
+const DENSE_POINT_COUNT = 500
+
 const GLOW_RADIUS_MULTIPLIER = 1.8
 const GLOW_CORE_STOP = 0.4
 
@@ -132,9 +143,17 @@ export default class extends Controller {
       .range([MIN_RADIUS, MAX_RADIUS])
       .clamp(true)
 
+    const sparseness = d3.scaleLinear()
+      .domain([SPARSE_POINT_COUNT, DENSE_POINT_COUNT])
+      .range([1, 0])
+      .clamp(true)(points.length)
+
+    const alphaMin = d3.interpolateNumber(DENSE_ALPHA_MIN, SPARSE_ALPHA_MIN)(sparseness)
+    const alphaMax = d3.interpolateNumber(DENSE_ALPHA_MAX, SPARSE_ALPHA_MAX)(sparseness)
+
     const opacityScale = d3.scaleLinear()
       .domain(d3.extent(points, (d) => (isSystemMode ? d.pl_eqt : clampForLog(d.pl_eqt))))
-      .range([POINT_BASE_ALPHA_MIN, POINT_BASE_ALPHA_MAX])
+      .range([alphaMin, alphaMax])
       .clamp(true)
 
     this.plotted = points.map((point) => ({
