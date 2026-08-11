@@ -7,10 +7,29 @@ const MUTED = "#8793aa"
 const AMBER = [255, 179, 0]
 
 const MARGIN = { top: 20, right: 24, bottom: 44, left: 60 }
-const MIN_RADIUS = 2
-const MAX_RADIUS = 8
+const MIN_RADIUS = 1
+const MAX_RADIUS = 5
 const HIT_RADIUS = 12
 const RESIZE_DEBOUNCE_MS = 150
+const LOG_SCALE_MIN = 1
+const POINT_BASE_ALPHA_MIN = 0.1
+const POINT_BASE_ALPHA_MAX = 0.22
+const GLOW_RADIUS_MULTIPLIER = 1.8
+const GLOW_CORE_STOP = 0.4
+
+const generateLogTicks = (scale) => {
+  const [min, max] = scale.domain()
+  const startExp = Math.floor(Math.log10(min))
+  const endExp = Math.ceil(Math.log10(max))
+  const candidates = []
+
+  for (let exp = startExp; exp <= endExp; exp++) {
+    const base = 10 ** exp
+    candidates.push(base, base * 5)
+  }
+
+  return candidates.filter((value) => value >= min && value <= max)
+}
 
 export default class extends Controller {
   static targets = ["canvas", "tooltip"]
@@ -74,14 +93,18 @@ export default class extends Controller {
     const innerWidth = width - MARGIN.left - MARGIN.right
     const innerHeight = height - MARGIN.top - MARGIN.bottom
 
-    const xScale = d3.scaleLinear()
-      .domain(d3.extent(points, (d) => d.sy_dist))
+    const clampForLog = (value) => Math.max(value, LOG_SCALE_MIN)
+
+    const xScale = d3.scaleLog()
+      .domain(d3.extent(points, (d) => clampForLog(d.sy_dist)))
       .range([MARGIN.left, MARGIN.left + innerWidth])
+      .clamp(true)
       .nice()
 
-    const yScale = d3.scaleLinear()
-      .domain(d3.extent(points, (d) => d.pl_eqt))
+    const yScale = d3.scaleLog()
+      .domain(d3.extent(points, (d) => clampForLog(d.pl_eqt)))
       .range([MARGIN.top + innerHeight, MARGIN.top])
+      .clamp(true)
       .nice()
 
     const radiusScale = d3.scaleSqrt()
@@ -90,23 +113,25 @@ export default class extends Controller {
       .clamp(true)
 
     const opacityScale = d3.scaleLinear()
-      .domain(d3.extent(points, (d) => d.pl_eqt))
-      .range([0.35, 1])
+      .domain(d3.extent(points, (d) => clampForLog(d.pl_eqt)))
+      .range([POINT_BASE_ALPHA_MIN, POINT_BASE_ALPHA_MAX])
       .clamp(true)
 
     this.plotted = points.map((point) => ({
       ...point,
-      x: xScale(point.sy_dist),
-      y: yScale(point.pl_eqt),
+      x: xScale(clampForLog(point.sy_dist)),
+      y: yScale(clampForLog(point.pl_eqt)),
       r: radiusScale(point.pl_rade),
       opacity: opacityScale(point.pl_eqt)
     }))
 
     this.drawAxes(ctx, xScale, yScale, innerWidth, innerHeight)
 
+    ctx.globalCompositeOperation = "lighter"
     for (const point of this.plotted) {
       this.drawPoint(ctx, point)
     }
+    ctx.globalCompositeOperation = "source-over"
 
     this.quadtree = d3.quadtree()
       .x((d) => d.x)
@@ -117,42 +142,43 @@ export default class extends Controller {
   drawAxes(ctx, xScale, yScale, innerWidth, innerHeight) {
     const format = d3.format("~s")
 
-    ctx.lineWidth = 1
-    ctx.font = "11px monospace"
+    ctx.lineWidth = 0.5
+    ctx.font = "10px monospace"
     ctx.fillStyle = MUTED
 
     ctx.textAlign = "center"
     ctx.textBaseline = "top"
-    for (const tick of xScale.ticks(6)) {
+    for (const tick of generateLogTicks(xScale)) {
       const x = xScale(tick)
 
       ctx.strokeStyle = GRID_LINE
-      ctx.globalAlpha = 0.3
+      ctx.globalAlpha = 0.15
       ctx.beginPath()
       ctx.moveTo(x, MARGIN.top)
       ctx.lineTo(x, MARGIN.top + innerHeight)
       ctx.stroke()
 
-      ctx.globalAlpha = 1
+      ctx.globalAlpha = 0.6
       ctx.fillText(format(tick), x, MARGIN.top + innerHeight + 6)
     }
 
     ctx.textAlign = "right"
     ctx.textBaseline = "middle"
-    for (const tick of yScale.ticks(6)) {
+    for (const tick of generateLogTicks(yScale)) {
       const y = yScale(tick)
 
       ctx.strokeStyle = GRID_LINE
-      ctx.globalAlpha = 0.15
+      ctx.globalAlpha = 0.08
       ctx.beginPath()
       ctx.moveTo(MARGIN.left, y)
       ctx.lineTo(MARGIN.left + innerWidth, y)
       ctx.stroke()
 
-      ctx.globalAlpha = 1
+      ctx.globalAlpha = 0.6
       ctx.fillText(format(tick), MARGIN.left - 8, y)
     }
 
+    ctx.globalAlpha = 0.6
     ctx.textAlign = "center"
     ctx.textBaseline = "alphabetic"
     ctx.fillText(
@@ -167,21 +193,22 @@ export default class extends Controller {
     ctx.textAlign = "center"
     ctx.fillText("Equilibrium temperature (K)", 0, 0)
     ctx.restore()
+
+    ctx.globalAlpha = 1
   }
 
   drawPoint(ctx, point) {
-    const layers = [
-      { scale: 2.4, alpha: 0.12 * point.opacity },
-      { scale: 1.5, alpha: 0.25 * point.opacity },
-      { scale: 1, alpha: point.opacity }
-    ]
+    const glowRadius = point.r * GLOW_RADIUS_MULTIPLIER
+    const gradient = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, glowRadius)
 
-    for (const layer of layers) {
-      ctx.beginPath()
-      ctx.fillStyle = `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, ${layer.alpha})`
-      ctx.arc(point.x, point.y, point.r * layer.scale, 0, Math.PI * 2)
-      ctx.fill()
-    }
+    gradient.addColorStop(0, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, ${point.opacity})`)
+    gradient.addColorStop(GLOW_CORE_STOP, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, ${point.opacity})`)
+    gradient.addColorStop(1, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, 0)`)
+
+    ctx.beginPath()
+    ctx.fillStyle = gradient
+    ctx.arc(point.x, point.y, glowRadius, 0, Math.PI * 2)
+    ctx.fill()
   }
 
   findNearest(x, y) {
