@@ -44,7 +44,7 @@ class ImportStellarHostsJob < ApplicationJob
         )
       end
 
-      rows = csv_data.map do |row|
+      rows = dedupe_by_hostname(csv_data).map do |row|
         {
           dataset_id: dataset.id,
           data: COLUMN_DEFS.keys.index_with { |col| row[col] },
@@ -56,5 +56,18 @@ class ImportStellarHostsJob < ApplicationJob
       DatasetRow.insert_all(rows) if rows.any?
       dataset.update!(imported_at: Time.current, row_count: rows.size)
     end
+  end
+
+  private
+
+  # The archive's stellarhosts table has one row per publication that reported
+  # stellar parameters for a host, not one row per star, so the same hostname
+  # can appear many times with differing completeness. Keep the most complete
+  # row (fewest blank fields) per hostname, breaking ties by CSV order.
+  def dedupe_by_hostname(csv_data)
+    csv_data
+      .group_by { |row| row["hostname"] }
+      .values
+      .map { |rows| rows.min_by { |row| COLUMN_DEFS.keys.count { |col| row[col].blank? } } }
   end
 end

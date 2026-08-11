@@ -95,6 +95,27 @@ RSpec.describe ImportStellarHostsJob, type: :job do
       expect(dataset.dataset_rows.first.data["hostname"]).to eq("TRAPPIST-1")
     end
 
+    context "and the CSV has multiple rows for the same hostname" do
+      before { stub_fetch(success: true, code: "200", body: <<~CSV) }
+        hostname,st_spectype,st_teff,st_rad,st_mass,st_met,st_lum,sy_dist,ra,dec
+        HD 80653,,5959,1.199,1.150,0.255,,109.86,140.339,14.368
+        HD 80653,G0 V,,1.199,1.150,0.255,-1.05,109.86,140.339,14.368
+        HD 80653,,6080,,,,,109.86,140.339,14.368
+      CSV
+
+      it "keeps only the row with the fewest blank fields per hostname" do
+        described_class.perform_now
+
+        dataset = Dataset.find_by!(name: "Stellar Hosts")
+        expect(dataset.dataset_rows.count).to eq(1)
+        expect(dataset.row_count).to eq(1)
+        expect(dataset.dataset_rows.first.data).to include(
+          "st_spectype" => "G0 V",
+          "st_lum" => "-1.05"
+        )
+      end
+    end
+
     context "and the CSV has no data rows" do
       before { stub_fetch(success: true, code: "200", body: "hostname,st_spectype,st_teff,st_rad,st_mass,st_met,st_lum,sy_dist,ra,dec\n") }
 
