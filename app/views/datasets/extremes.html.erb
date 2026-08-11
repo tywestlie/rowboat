@@ -1,12 +1,13 @@
 <% content_for :title, "Extremes: #{@dataset.name}" %>
 
 <div class="flex flex-col gap-8">
-  <div class="flex flex-col gap-2">
-    <p>
-      <%= link_to "← #{@dataset.name}", dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
-    </p>
-    <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Extremes leaderboard</h1>
-  </div>
+  <p>
+    <%= link_to "← All datasets", datasets_path, class: "inline-flex min-h-11 items-center text-xs text-muted hover:text-amber" %>
+  </p>
+
+  <%= render "nav", dataset: @dataset, active: :extremes %>
+
+  <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Extremes leaderboard</h1>
 
   <% @leaderboards.each do |title, rows| %>
     <section class="flex flex-col gap-3">

@@ -97,3 +97,8 @@ Default canonical labels used as-is (needs-triage, needs-info, ready-for-agent, 
 ### Domain docs
 
 Single-context: `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
+
+### Version Control
+When asked to create a PR, use gh pr create with a description
+covering Summary / Changes / Testing, based on the commits and
+diff since main.

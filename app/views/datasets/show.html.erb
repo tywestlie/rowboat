@@ -2,11 +2,15 @@
 
 <div class="flex flex-col gap-6">
   <p>
-    <%= link_to "← All datasets", datasets_path, class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+    <%= link_to "← All datasets", datasets_path, class: "inline-flex min-h-11 items-center text-xs text-muted hover:text-amber" %>
   </p>
 
+  <%= render "nav", dataset: @dataset, active: @host ? :systems : :all_planets %>
+
   <div class="flex flex-col gap-2">
-    <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl"><%= @dataset.name %></h1>
+    <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">
+      <%= @host || "All Planets" %>
+    </h1>
     <p class="text-muted">
       <%= number_with_delimiter(@dataset.row_count) %> rows
       &middot; imported <%= @dataset.imported_at&.to_fs(:long) || "never" %>
@@ -15,12 +19,6 @@
       <% end %>
     </p>
   </div>
-
-  <p class="flex flex-wrap items-center gap-x-3 gap-y-2">
-    <%= link_to "Surprise me", random_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
-    <span class="text-muted">&middot;</span>
-    <%= link_to "Extremes leaderboard", extremes_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
-  </p>
 
   <% if @host %>
     <div class="flex flex-col gap-2">

@@ -228,7 +228,7 @@ RSpec.describe "Datasets", type: :request do
     it "links back to the unfiltered flat view" do
       get systems_dataset_path(dataset)
 
-      expect(response.body).to include("Browse all planets")
+      expect(response.body).to include("All Planets")
       expect(response.body).to include(dataset_path(dataset))
     end
 
