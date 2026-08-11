@@ -14,6 +14,7 @@ Rails.application.routes.draw do
     member do
       get :random
       get :extremes
+      get :systems
     end
 
     resources :rows, only: [ :show ], controller: "dataset_rows"

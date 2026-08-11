@@ -12,8 +12,19 @@ const MAX_RADIUS = 5
 const HIT_RADIUS = 12
 const RESIZE_DEBOUNCE_MS = 150
 const LOG_SCALE_MIN = 1
-const POINT_BASE_ALPHA_MIN = 0.1
-const POINT_BASE_ALPHA_MAX = 0.22
+
+// The dense overview (thousands of overlapping points) relies on additive
+// blending to build up brightness, so individual points are drawn faint.
+// A single system (a handful of points, no overlap) needs the opposite:
+// bold, fully-opaque points, or they're nearly invisible. Interpolate
+// between these two alpha ranges based on how many points are on screen.
+const DENSE_ALPHA_MIN = 0.1
+const DENSE_ALPHA_MAX = 0.22
+const SPARSE_ALPHA_MIN = 0.85
+const SPARSE_ALPHA_MAX = 1
+const SPARSE_POINT_COUNT = 30
+const DENSE_POINT_COUNT = 500
+
 const GLOW_RADIUS_MULTIPLIER = 1.8
 const GLOW_CORE_STOP = 0.4
 
@@ -33,7 +44,7 @@ const generateLogTicks = (scale) => {
 
 export default class extends Controller {
   static targets = ["canvas", "tooltip"]
-  static values = { points: Array, datasetId: Number }
+  static values = { points: Array, datasetId: Number, mode: String }
 
   connect() {
     this.plotted = []
@@ -93,39 +104,67 @@ export default class extends Controller {
     const innerWidth = width - MARGIN.left - MARGIN.right
     const innerHeight = height - MARGIN.top - MARGIN.bottom
 
+    // "system" mode (a single host star filtered in) plots orbital period
+    // instead of distance from Earth, which is identical for every planet
+    // in the same system and would collapse to a single x position. Values
+    // within one system also span a much smaller range, so linear scales
+    // read better here than the log scales used for the full-sky view.
+    const isSystemMode = this.modeValue === "system"
+    const xField = isSystemMode ? "pl_orbper" : "sy_dist"
+    const xLabel = isSystemMode ? "Orbital period (days)" : "Distance from Earth (parsecs)"
     const clampForLog = (value) => Math.max(value, LOG_SCALE_MIN)
 
-    const xScale = d3.scaleLog()
-      .domain(d3.extent(points, (d) => clampForLog(d.sy_dist)))
-      .range([MARGIN.left, MARGIN.left + innerWidth])
-      .clamp(true)
-      .nice()
+    const xScale = isSystemMode
+      ? d3.scaleLinear()
+        .domain(d3.extent(points, (d) => d[xField]))
+        .range([MARGIN.left, MARGIN.left + innerWidth])
+        .clamp(true)
+        .nice()
+      : d3.scaleLog()
+        .domain(d3.extent(points, (d) => clampForLog(d[xField])))
+        .range([MARGIN.left, MARGIN.left + innerWidth])
+        .clamp(true)
+        .nice()
 
-    const yScale = d3.scaleLog()
-      .domain(d3.extent(points, (d) => clampForLog(d.pl_eqt)))
-      .range([MARGIN.top + innerHeight, MARGIN.top])
-      .clamp(true)
-      .nice()
+    const yScale = isSystemMode
+      ? d3.scaleLinear()
+        .domain(d3.extent(points, (d) => d.pl_eqt))
+        .range([MARGIN.top + innerHeight, MARGIN.top])
+        .clamp(true)
+        .nice()
+      : d3.scaleLog()
+        .domain(d3.extent(points, (d) => clampForLog(d.pl_eqt)))
+        .range([MARGIN.top + innerHeight, MARGIN.top])
+        .clamp(true)
+        .nice()
 
     const radiusScale = d3.scaleSqrt()
       .domain(d3.extent(points, (d) => d.pl_rade))
       .range([MIN_RADIUS, MAX_RADIUS])
       .clamp(true)
 
+    const sparseness = d3.scaleLinear()
+      .domain([SPARSE_POINT_COUNT, DENSE_POINT_COUNT])
+      .range([1, 0])
+      .clamp(true)(points.length)
+
+    const alphaMin = d3.interpolateNumber(DENSE_ALPHA_MIN, SPARSE_ALPHA_MIN)(sparseness)
+    const alphaMax = d3.interpolateNumber(DENSE_ALPHA_MAX, SPARSE_ALPHA_MAX)(sparseness)
+
     const opacityScale = d3.scaleLinear()
-      .domain(d3.extent(points, (d) => clampForLog(d.pl_eqt)))
-      .range([POINT_BASE_ALPHA_MIN, POINT_BASE_ALPHA_MAX])
+      .domain(d3.extent(points, (d) => (isSystemMode ? d.pl_eqt : clampForLog(d.pl_eqt))))
+      .range([alphaMin, alphaMax])
       .clamp(true)
 
     this.plotted = points.map((point) => ({
       ...point,
-      x: xScale(clampForLog(point.sy_dist)),
-      y: yScale(clampForLog(point.pl_eqt)),
+      x: xScale(isSystemMode ? point[xField] : clampForLog(point[xField])),
+      y: yScale(isSystemMode ? point.pl_eqt : clampForLog(point.pl_eqt)),
       r: radiusScale(point.pl_rade),
       opacity: opacityScale(point.pl_eqt)
     }))
 
-    this.drawAxes(ctx, xScale, yScale, innerWidth, innerHeight)
+    this.drawAxes(ctx, xScale, yScale, innerWidth, innerHeight, { isSystemMode, xLabel })
 
     ctx.globalCompositeOperation = "lighter"
     for (const point of this.plotted) {
@@ -139,8 +178,10 @@ export default class extends Controller {
       .addAll(this.plotted)
   }
 
-  drawAxes(ctx, xScale, yScale, innerWidth, innerHeight) {
+  drawAxes(ctx, xScale, yScale, innerWidth, innerHeight, { isSystemMode = false, xLabel = "Distance from Earth (parsecs)" } = {}) {
     const format = d3.format("~s")
+    const xTicks = isSystemMode ? xScale.ticks(6) : generateLogTicks(xScale)
+    const yTicks = isSystemMode ? yScale.ticks(6) : generateLogTicks(yScale)
 
     ctx.lineWidth = 0.5
     ctx.font = "10px monospace"
@@ -148,7 +189,7 @@ export default class extends Controller {
 
     ctx.textAlign = "center"
     ctx.textBaseline = "top"
-    for (const tick of generateLogTicks(xScale)) {
+    for (const tick of xTicks) {
       const x = xScale(tick)
 
       ctx.strokeStyle = GRID_LINE
@@ -164,7 +205,7 @@ export default class extends Controller {
 
     ctx.textAlign = "right"
     ctx.textBaseline = "middle"
-    for (const tick of generateLogTicks(yScale)) {
+    for (const tick of yTicks) {
       const y = yScale(tick)
 
       ctx.strokeStyle = GRID_LINE
@@ -182,7 +223,7 @@ export default class extends Controller {
     ctx.textAlign = "center"
     ctx.textBaseline = "alphabetic"
     ctx.fillText(
-      "Distance from Earth (parsecs)",
+      xLabel,
       MARGIN.left + innerWidth / 2,
       MARGIN.top + innerHeight + 34
     )
@@ -256,7 +297,9 @@ export default class extends Controller {
 
     const rows = [
       [point.pl_name || "Unknown planet", "font-medium text-signal"],
-      [`Distance: ${point.sy_dist.toFixed(1)} pc`, "text-muted"],
+      this.modeValue === "system" && point.pl_orbper != null
+        ? [`Orbital period: ${point.pl_orbper.toFixed(1)} days`, "text-muted"]
+        : [`Distance: ${point.sy_dist.toFixed(1)} pc`, "text-muted"],
       [`Temp: ${Math.round(point.pl_eqt)} K`, "text-muted"],
       [`Radius: ${point.pl_rade.toFixed(2)} R⊕`, "text-muted"]
     ]

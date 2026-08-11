@@ -22,11 +22,25 @@
     <%= link_to "Extremes leaderboard", extremes_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
   </p>
 
+  <% if @host %>
+    <div class="flex flex-col gap-2">
+      <p>
+        <%= link_to "← All systems", systems_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+      </p>
+
+      <p class="text-sm text-muted">
+        Showing <%= number_with_delimiter(@rows.total_count) %> planet<%= "s" unless @rows.total_count == 1 %> around
+        <span class="text-signal"><%= @host %></span>
+      </p>
+    </div>
+  <% end %>
+
   <% if @starfield_points.present? %>
     <div
       data-controller="starfield"
       data-starfield-points-value="<%= @starfield_points.to_json %>"
       data-starfield-dataset-id-value="<%= @dataset.id %>"
+      data-starfield-mode-value="<%= @starfield_mode %>"
       class="relative"
     >
       <canvas data-starfield-target="canvas" class="block w-full rounded-lg border border-grid-line"></canvas>
