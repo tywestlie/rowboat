@@ -7,14 +7,15 @@ const MUTED = "#8793aa"
 const AMBER = [255, 179, 0]
 
 const MARGIN = { top: 20, right: 24, bottom: 44, left: 60 }
-const MIN_RADIUS = 2
-const MAX_RADIUS = 8
+const MIN_RADIUS = 1
+const MAX_RADIUS = 5
 const HIT_RADIUS = 12
 const RESIZE_DEBOUNCE_MS = 150
 const LOG_SCALE_MIN = 1
 const POINT_BASE_ALPHA_MIN = 0.1
 const POINT_BASE_ALPHA_MAX = 0.22
-const GLOW_RADIUS_MULTIPLIER = 3
+const GLOW_RADIUS_MULTIPLIER = 1.8
+const GLOW_CORE_STOP = 0.4
 
 const generateLogTicks = (scale) => {
   const [min, max] = scale.domain()
@@ -201,6 +202,7 @@ export default class extends Controller {
     const gradient = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, glowRadius)
 
     gradient.addColorStop(0, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, ${point.opacity})`)
+    gradient.addColorStop(GLOW_CORE_STOP, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, ${point.opacity})`)
     gradient.addColorStop(1, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, 0)`)
 
     ctx.beginPath()
