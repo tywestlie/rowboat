@@ -241,6 +241,65 @@ RSpec.describe "Datasets", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("This dataset has no host star data.")
     end
+
+    context "systems overview chart" do
+      before do
+        create(:dataset_column, dataset: dataset, name: "sy_dist", display_name: "Distance", data_type: "float", position: 2)
+        create(:dataset_column, dataset: dataset, name: "pl_eqt", display_name: "Temperature", data_type: "float", position: 3)
+      end
+
+      it "does not render the chart when distance/temperature columns are absent" do
+        columnless_dataset = create(:dataset)
+        create(:dataset_column, dataset: columnless_dataset, name: "hostname", display_name: "Host Star", data_type: "string", position: 0)
+        create(:dataset_row, dataset: columnless_dataset, data: { "pl_name" => "TRAPPIST-1 b", "hostname" => "TRAPPIST-1" })
+        create(:dataset_row, dataset: columnless_dataset, data: { "pl_name" => "TRAPPIST-1 c", "hostname" => "TRAPPIST-1" })
+
+        get systems_dataset_path(columnless_dataset)
+
+        expect(response.body).not_to include('data-controller="systems-chart"')
+      end
+
+      it "renders the chart with per-system averages cast server-side" do
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "TRAPPIST-1 b", "hostname" => "TRAPPIST-1", "sy_dist" => "12.4", "pl_eqt" => "400.0" })
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "TRAPPIST-1 c", "hostname" => "TRAPPIST-1", "sy_dist" => "12.4", "pl_eqt" => "300.0" })
+
+        get systems_dataset_path(dataset)
+
+        expect(response.body).to include('data-controller="systems-chart"')
+        points = systems_chart_points(response.body)
+        expect(points).to eq([ { "hostname" => "TRAPPIST-1", "planet_count" => 2, "avg_distance" => 12.4, "avg_temp" => 350.0 } ])
+      end
+
+      it "excludes systems where no row has a usable distance or temperature" do
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "TRAPPIST-1 b", "hostname" => "TRAPPIST-1", "sy_dist" => "12.4", "pl_eqt" => "400.0" })
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "TRAPPIST-1 c", "hostname" => "TRAPPIST-1", "sy_dist" => "12.4", "pl_eqt" => "300.0" })
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "Kepler-90 b", "hostname" => "Kepler-90" })
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "Kepler-90 c", "hostname" => "Kepler-90" })
+
+        get systems_dataset_path(dataset)
+
+        points = systems_chart_points(response.body)
+        expect(points.map { |p| p["hostname"] }).to eq([ "TRAPPIST-1" ])
+        expect(response.body).to include("Kepler-90")
+      end
+
+      it "respects the multi-planet-only toggle" do
+        create(:dataset_row, dataset: dataset, data: { "pl_name" => "Lone World b", "hostname" => "Lone World", "sy_dist" => "50.0", "pl_eqt" => "255.0" })
+
+        get systems_dataset_path(dataset)
+        expect(systems_chart_points(response.body)).to eq([])
+
+        get systems_dataset_path(dataset), params: { all: "1" }
+        expect(systems_chart_points(response.body).map { |p| p["hostname"] }).to eq([ "Lone World" ])
+      end
+    end
+
+    def systems_chart_points(body)
+      match = body.match(/data-systems-chart-points-value="([^"]*)"/)
+      return [] unless match
+
+      JSON.parse(CGI.unescapeHTML(match[1]))
+    end
   end
 
   describe "GET /datasets index links to systems for the exoplanet dataset" do

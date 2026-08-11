@@ -21,6 +21,7 @@ class DatasetsController < ApplicationController
     @columns = @dataset.dataset_columns.order(:position)
     @include_single_planet = params[:all] == "1"
     @systems = system_counts
+    @systems_chart_points = systems_chart_points
   end
 
   def random
@@ -98,6 +99,43 @@ class DatasetsController < ApplicationController
 
     counts.sort_by { |name, count| [ -count, name ] }
           .map { |name, count| { hostname: name, planet_count: count } }
+  end
+
+  def has_distance_and_temp_columns?
+    names = @columns.map(&:name)
+    names.include?("sy_dist") && names.include?("pl_eqt")
+  end
+
+  # Distance is the same for every planet in a system, so any row's value
+  # would do, but temperature varies planet-to-planet, so both are averaged
+  # per system. Systems where no row has a usable value for either field are
+  # dropped rather than plotted with a fabricated average.
+  def systems_chart_points
+    return [] if @systems.empty? || !has_distance_and_temp_columns?
+
+    hostnames = @systems.map { |system| system[:hostname] }
+    values_by_host = @dataset.dataset_rows
+      .where("data->>'hostname' IN (?)", hostnames)
+      .pluck(
+        Arel.sql("data->>'hostname'"),
+        Arel.sql("NULLIF(data->>'sy_dist', '')::float"),
+        Arel.sql("NULLIF(data->>'pl_eqt', '')::float")
+      )
+      .group_by { |hostname, _, _| hostname }
+
+    @systems.filter_map do |system|
+      rows = values_by_host[system[:hostname]] || []
+      distances = rows.filter_map { |_, distance, _| distance }
+      temps = rows.filter_map { |_, _, temp| temp }
+      next if distances.empty? || temps.empty?
+
+      {
+        hostname: system[:hostname],
+        planet_count: system[:planet_count],
+        avg_distance: (distances.sum / distances.size).round(2),
+        avg_temp: (temps.sum / temps.size).round(1)
+      }
+    end
   end
 
   def numeric_top(field, direction, distance_from: nil)
