@@ -1,0 +1,21 @@
+<%
+  nav_items = [
+    [:systems, "Systems", systems_dataset_path(dataset)],
+    [:all_planets, "All Planets", dataset_path(dataset)],
+    [:random, "Surprise Me", random_dataset_path(dataset)],
+    [:extremes, "Extremes", extremes_dataset_path(dataset)]
+  ]
+%>
+<nav class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-grid-line bg-panel px-4 py-3 sm:px-6">
+  <%= link_to dataset.name, systems_dataset_path(dataset), class: "font-display text-base font-semibold tracking-tight text-signal hover:text-amber sm:text-lg" %>
+
+  <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+    <% nav_items.each do |key, label, path| %>
+      <% is_active = key == active %>
+      <%= link_to label, path, class: [
+            "inline-flex min-h-11 items-center border-b-2 pb-0.5",
+            is_active ? "border-amber font-semibold text-amber" : "border-transparent text-muted hover:text-signal"
+          ].join(" ") %>
+    <% end %>
+  </div>
+</nav>
