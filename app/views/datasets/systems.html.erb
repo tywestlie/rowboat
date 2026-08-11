@@ -20,6 +20,21 @@
     <% end %>
   </div>
 
+  <% if @systems_chart_points.present? %>
+    <div
+      data-controller="systems-chart"
+      data-systems-chart-points-value="<%= @systems_chart_points.to_json %>"
+      data-systems-chart-dataset-id-value="<%= @dataset.id %>"
+      class="relative"
+    >
+      <canvas data-systems-chart-target="canvas" class="block w-full rounded-lg border border-grid-line"></canvas>
+      <div
+        data-systems-chart-target="tooltip"
+        class="pointer-events-none fixed z-10 hidden rounded-md border border-grid-line bg-panel px-3 py-2 text-xs shadow-lg"
+      ></div>
+    </div>
+  <% end %>
+
   <% if @systems.empty? %>
     <p class="italic text-muted">This dataset has no host star data.</p>
   <% else %>
