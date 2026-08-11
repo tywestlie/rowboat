@@ -27,7 +27,8 @@
       </p>
 
       <p class="text-sm text-muted">
-        Showing <%= number_with_delimiter(@rows.total_count) %> planet<%= "s" unless @rows.total_count == 1 %>
+        Showing <%= number_with_delimiter(@rows.total_count) %> planet<%= "s" unless @rows.total_count == 1 %> around
+        <span class="text-signal"><%= @host %></span>
       </p>
     </div>
   <% end %>
