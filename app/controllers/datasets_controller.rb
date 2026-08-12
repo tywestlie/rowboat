@@ -14,6 +14,7 @@ class DatasetsController < ApplicationController
     @rows = filtered_rows.order(:id).page(params[:page]).per(50)
     @starfield_points = starfield_points if starfield_eligible?
     @starfield_mode = system_mode? ? "system" : "sky"
+    @stellar_host = stellar_host_row if @host
   end
 
   def systems
@@ -136,6 +137,13 @@ class DatasetsController < ApplicationController
         avg_temp: (temps.sum / temps.size).round(1)
       }
     end
+  end
+
+  def stellar_host_row
+    stellar_hosts = Dataset.find_by(name: "Stellar Hosts")
+    return nil unless stellar_hosts
+
+    stellar_hosts.dataset_rows.find_by("data->>'hostname' = ?", @host)&.data
   end
 
   def numeric_top(field, direction, distance_from: nil)

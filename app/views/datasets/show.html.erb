@@ -31,6 +31,30 @@
         <span class="text-signal"><%= @host %></span>
       </p>
     </div>
+
+    <% if @stellar_host.present? %>
+      <div class="rounded-lg border border-grid-line bg-panel px-4 py-3">
+        <h2 class="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Host Star</h2>
+        <dl class="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+          <div>
+            <dt class="text-xs text-muted">Spectral Type</dt>
+            <dd class="text-signal"><%= @stellar_host["st_spectype"].presence || "—" %></dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted">Temperature (K)</dt>
+            <dd class="font-mono text-signal"><%= @stellar_host["st_teff"].presence || "—" %></dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted">Mass (Solar masses)</dt>
+            <dd class="font-mono text-signal"><%= @stellar_host["st_mass"].presence || "—" %></dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted">Radius (Solar radii)</dt>
+            <dd class="font-mono text-signal"><%= @stellar_host["st_rad"].presence || "—" %></dd>
+          </div>
+        </dl>
+      </div>
+    <% end %>
   <% end %>
 
   <% if @starfield_points.present? %>
