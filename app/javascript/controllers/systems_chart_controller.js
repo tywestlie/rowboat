@@ -6,6 +6,23 @@ const GRID_LINE = "#24314a"
 const MUTED = "#8793aa"
 const AMBER = [255, 179, 0]
 
+// Real spectral-type colors (approximate blackbody tint), keyed by the
+// leading letter of st_spectype (e.g. "M8V" -> "M"). Systems with no
+// matching Stellar Hosts row or an unrecognized spectral type fall back
+// to amber so they're still visible but visually flagged as "unknown".
+const SPECTRAL_COLORS = {
+  O: [0x9B, 0xB0, 0xFF],
+  B: [0xAA, 0xBF, 0xFF],
+  A: [0xCA, 0xD7, 0xFF],
+  F: [0xF8, 0xF7, 0xFF],
+  G: [0xFF, 0xF4, 0xEA],
+  K: [0xFF, 0xD2, 0xA1],
+  M: [0xFF, 0xCC, 0x6F]
+}
+const SPECTRAL_CLASS_ORDER = [ "O", "B", "A", "F", "G", "K", "M" ]
+
+const colorForPoint = (point) => SPECTRAL_COLORS[point.spectral_class] || AMBER
+
 const MARGIN = { top: 20, right: 24, bottom: 44, left: 60 }
 const MIN_RADIUS = 3
 const MAX_RADIUS = 12
@@ -137,6 +154,8 @@ export default class extends Controller {
     }
     ctx.globalCompositeOperation = "source-over"
 
+    this.drawLegend(ctx, width)
+
     this.quadtree = d3.quadtree()
       .x((d) => d.x)
       .y((d) => d.y)
@@ -206,17 +225,56 @@ export default class extends Controller {
   }
 
   drawPoint(ctx, point) {
+    const color = colorForPoint(point)
     const glowRadius = point.r * GLOW_RADIUS_MULTIPLIER
     const gradient = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, glowRadius)
 
-    gradient.addColorStop(0, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, ${point.opacity})`)
-    gradient.addColorStop(GLOW_CORE_STOP, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, ${point.opacity})`)
-    gradient.addColorStop(1, `rgba(${AMBER[0]}, ${AMBER[1]}, ${AMBER[2]}, 0)`)
+    gradient.addColorStop(0, `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${point.opacity})`)
+    gradient.addColorStop(GLOW_CORE_STOP, `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${point.opacity})`)
+    gradient.addColorStop(1, `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0)`)
 
     ctx.beginPath()
     ctx.fillStyle = gradient
     ctx.arc(point.x, point.y, glowRadius, 0, Math.PI * 2)
     ctx.fill()
+  }
+
+  drawLegend(ctx, width) {
+    const classesPresent = SPECTRAL_CLASS_ORDER.filter((cls) =>
+      this.plotted.some((point) => point.spectral_class === cls)
+    )
+    const hasUnknown = this.plotted.some((point) => !SPECTRAL_COLORS[point.spectral_class])
+    const entries = [
+      ...classesPresent.map((cls) => ({ label: cls, color: SPECTRAL_COLORS[cls] })),
+      ...(hasUnknown ? [ { label: "?", color: AMBER } ] : [])
+    ]
+
+    if (entries.length === 0) return
+
+    const swatchRadius = 4
+    const itemGap = 34
+    const startX = width - MARGIN.right - entries.length * itemGap + itemGap / 2
+    const y = MARGIN.top - 6
+
+    ctx.save()
+    ctx.font = "10px monospace"
+    ctx.textAlign = "left"
+    ctx.textBaseline = "middle"
+    ctx.globalAlpha = 1
+
+    entries.forEach((entry, index) => {
+      const x = startX + index * itemGap
+
+      ctx.beginPath()
+      ctx.fillStyle = `rgb(${entry.color[0]}, ${entry.color[1]}, ${entry.color[2]})`
+      ctx.arc(x, y, swatchRadius, 0, Math.PI * 2)
+      ctx.fill()
+
+      ctx.fillStyle = MUTED
+      ctx.fillText(entry.label, x + swatchRadius + 4, y)
+    })
+
+    ctx.restore()
   }
 
   findNearest(x, y) {
