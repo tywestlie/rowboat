@@ -267,7 +267,7 @@ RSpec.describe "Datasets", type: :request do
 
         expect(response.body).to include('data-controller="systems-chart"')
         points = systems_chart_points(response.body)
-        expect(points).to eq([ { "hostname" => "TRAPPIST-1", "planet_count" => 2, "avg_distance" => 12.4, "avg_temp" => 350.0 } ])
+        expect(points).to eq([ { "hostname" => "TRAPPIST-1", "planet_count" => 2, "avg_distance" => 12.4, "avg_temp" => 350.0, "spectral_class" => nil } ])
       end
 
       it "excludes systems where no row has a usable distance or temperature" do
