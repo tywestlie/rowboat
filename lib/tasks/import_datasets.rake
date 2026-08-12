@@ -6,6 +6,6 @@ namespace :datasets do
 
   desc "Import stellar host data from NASA Exoplanet Archive"
   task import_stellar_hosts: :environment do
-    ImportStellarHostsJob.perform_now
+    ImportStellarHostsJob.perform_later
   end
 end
