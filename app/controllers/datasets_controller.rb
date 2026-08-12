@@ -6,6 +6,7 @@ class DatasetsController < ApplicationController
   STARFIELD_FIELDS = %w[pl_rade sy_dist pl_eqt].freeze
   ORBITAL_PERIOD_FIELD = "pl_orbper"
   MIN_MULTI_PLANET_COUNT = 2
+  SPECTRAL_CLASSES = %w[O B A F G K M].freeze
 
   def show
     @dataset = Dataset.find(params[:id])
@@ -124,6 +125,8 @@ class DatasetsController < ApplicationController
       )
       .group_by { |hostname, _, _| hostname }
 
+    spectral_classes = spectral_classes_by_hostname(hostnames)
+
     @systems.filter_map do |system|
       rows = values_by_host[system[:hostname]] || []
       distances = rows.filter_map { |_, distance, _| distance }
@@ -134,9 +137,26 @@ class DatasetsController < ApplicationController
         hostname: system[:hostname],
         planet_count: system[:planet_count],
         avg_distance: (distances.sum / distances.size).round(2),
-        avg_temp: (temps.sum / temps.size).round(1)
+        avg_temp: (temps.sum / temps.size).round(1),
+        spectral_class: spectral_classes[system[:hostname]]
       }
     end
+  end
+
+  # Spectral type strings look like "M8V" or "G2V"; the leading letter is the
+  # spectral class used for coloring. Hosts with no Stellar Hosts row, a blank
+  # st_spectype, or an unrecognized leading letter get nil (falls back to amber).
+  def spectral_classes_by_hostname(hostnames)
+    stellar_hosts = Dataset.find_by(name: "Stellar Hosts")
+    return {} unless stellar_hosts
+
+    stellar_hosts.dataset_rows
+      .where("data->>'hostname' IN (?)", hostnames)
+      .pluck(Arel.sql("data->>'hostname'"), Arel.sql("data->>'st_spectype'"))
+      .each_with_object({}) do |(hostname, spectype), map|
+        letter = spectype.to_s.strip[0]&.upcase
+        map[hostname] = letter if SPECTRAL_CLASSES.include?(letter)
+      end
   end
 
   def stellar_host_row
