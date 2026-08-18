@@ -1,6 +1,4 @@
 class Dataset < ApplicationRecord
-  has_many :queries, dependent: :destroy
-
   validates :name, presence: true
 
   def safe_source_url

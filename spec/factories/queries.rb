@@ -1,8 +1,7 @@
 FactoryBot.define do
   factory :query do
-    dataset { nil }
-    question { "MyText" }
-    generated_query { "" }
-    result_summary { "MyText" }
+    question { "How many exoplanets were discovered after 2015?" }
+    generated_query { nil }
+    result_summary { nil }
   end
 end
