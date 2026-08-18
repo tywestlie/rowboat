@@ -7,7 +7,10 @@
   ]
 %>
 <nav class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-grid-line bg-panel px-4 py-3 sm:px-6">
-  <%= link_to "Parallax", root_path, class: "font-display text-base font-semibold tracking-tight text-signal hover:text-amber sm:text-lg" %>
+  <%= link_to root_path, class: "inline-flex items-center gap-2 font-display text-base font-semibold tracking-tight text-signal hover:text-amber sm:text-lg" do %>
+    <%= render "shared/logo", size: 26 %>
+    Parallax
+  <% end %>
 
   <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
     <% nav_items.each do |key, label, path| %>
