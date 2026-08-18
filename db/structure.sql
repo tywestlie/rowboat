@@ -26,73 +26,6 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
--- Name: dataset_columns; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.dataset_columns (
-    id bigint NOT NULL,
-    dataset_id bigint NOT NULL,
-    name character varying,
-    display_name character varying,
-    data_type character varying,
-    "position" integer,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
--- Name: dataset_columns_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.dataset_columns_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: dataset_columns_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.dataset_columns_id_seq OWNED BY public.dataset_columns.id;
-
-
---
--- Name: dataset_rows; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.dataset_rows (
-    id bigint NOT NULL,
-    dataset_id bigint NOT NULL,
-    data jsonb,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
--- Name: dataset_rows_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.dataset_rows_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: dataset_rows_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.dataset_rows_id_seq OWNED BY public.dataset_rows.id;
-
-
---
 -- Name: datasets; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -103,7 +36,8 @@ CREATE TABLE public.datasets (
     imported_at timestamp(6) without time zone,
     row_count integer,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    description text
 );
 
 
@@ -124,6 +58,46 @@ CREATE SEQUENCE public.datasets_id_seq
 --
 
 ALTER SEQUENCE public.datasets_id_seq OWNED BY public.datasets.id;
+
+
+--
+-- Name: exoplanets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.exoplanets (
+    id bigint NOT NULL,
+    pl_name character varying,
+    hostname character varying,
+    discoverymethod character varying,
+    disc_year integer,
+    pl_orbper double precision,
+    pl_rade double precision,
+    pl_bmasse double precision,
+    pl_eqt double precision,
+    st_teff double precision,
+    sy_dist double precision,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: exoplanets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.exoplanets_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: exoplanets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.exoplanets_id_seq OWNED BY public.exoplanets.id;
 
 
 --
@@ -170,17 +144,43 @@ CREATE TABLE public.schema_migrations (
 
 
 --
--- Name: dataset_columns id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: stellar_hosts; Type: TABLE; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dataset_columns ALTER COLUMN id SET DEFAULT nextval('public.dataset_columns_id_seq'::regclass);
+CREATE TABLE public.stellar_hosts (
+    id bigint NOT NULL,
+    hostname character varying,
+    st_spectype character varying,
+    st_teff double precision,
+    st_rad double precision,
+    st_mass double precision,
+    st_met double precision,
+    st_lum double precision,
+    sy_dist double precision,
+    ra double precision,
+    "dec" double precision,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
 
 
 --
--- Name: dataset_rows id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: stellar_hosts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.dataset_rows ALTER COLUMN id SET DEFAULT nextval('public.dataset_rows_id_seq'::regclass);
+CREATE SEQUENCE public.stellar_hosts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stellar_hosts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stellar_hosts_id_seq OWNED BY public.stellar_hosts.id;
 
 
 --
@@ -191,10 +191,24 @@ ALTER TABLE ONLY public.datasets ALTER COLUMN id SET DEFAULT nextval('public.dat
 
 
 --
+-- Name: exoplanets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.exoplanets ALTER COLUMN id SET DEFAULT nextval('public.exoplanets_id_seq'::regclass);
+
+
+--
 -- Name: queries id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.queries ALTER COLUMN id SET DEFAULT nextval('public.queries_id_seq'::regclass);
+
+
+--
+-- Name: stellar_hosts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stellar_hosts ALTER COLUMN id SET DEFAULT nextval('public.stellar_hosts_id_seq'::regclass);
 
 
 --
@@ -206,27 +220,19 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
--- Name: dataset_columns dataset_columns_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dataset_columns
-    ADD CONSTRAINT dataset_columns_pkey PRIMARY KEY (id);
-
-
---
--- Name: dataset_rows dataset_rows_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dataset_rows
-    ADD CONSTRAINT dataset_rows_pkey PRIMARY KEY (id);
-
-
---
 -- Name: datasets datasets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.datasets
     ADD CONSTRAINT datasets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: exoplanets exoplanets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.exoplanets
+    ADD CONSTRAINT exoplanets_pkey PRIMARY KEY (id);
 
 
 --
@@ -246,17 +252,18 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
--- Name: index_dataset_columns_on_dataset_id; Type: INDEX; Schema: public; Owner: -
+-- Name: stellar_hosts stellar_hosts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE INDEX index_dataset_columns_on_dataset_id ON public.dataset_columns USING btree (dataset_id);
+ALTER TABLE ONLY public.stellar_hosts
+    ADD CONSTRAINT stellar_hosts_pkey PRIMARY KEY (id);
 
 
 --
--- Name: index_dataset_rows_on_dataset_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_exoplanets_on_hostname; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_dataset_rows_on_dataset_id ON public.dataset_rows USING btree (dataset_id);
+CREATE INDEX index_exoplanets_on_hostname ON public.exoplanets USING btree (hostname);
 
 
 --
@@ -264,6 +271,13 @@ CREATE INDEX index_dataset_rows_on_dataset_id ON public.dataset_rows USING btree
 --
 
 CREATE INDEX index_queries_on_dataset_id ON public.queries USING btree (dataset_id);
+
+
+--
+-- Name: index_stellar_hosts_on_hostname; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_stellar_hosts_on_hostname ON public.stellar_hosts USING btree (hostname);
 
 
 --
@@ -275,28 +289,16 @@ ALTER TABLE ONLY public.queries
 
 
 --
--- Name: dataset_columns fk_rails_d2b414c3da; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dataset_columns
-    ADD CONSTRAINT fk_rails_d2b414c3da FOREIGN KEY (dataset_id) REFERENCES public.datasets(id);
-
-
---
--- Name: dataset_rows fk_rails_f69d46b114; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.dataset_rows
-    ADD CONSTRAINT fk_rails_f69d46b114 FOREIGN KEY (dataset_id) REFERENCES public.datasets(id);
-
-
---
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260818210300'),
+('20260818210000'),
+('20260818202219'),
+('20260818202217'),
 ('20260806191744'),
 ('20260806191743'),
 ('20260806191742'),

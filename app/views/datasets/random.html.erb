@@ -9,10 +9,10 @@
 
   <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Surprise me</h1>
 
-  <% if @row.nil? %>
+  <% if @exoplanet.nil? %>
     <p class="italic text-muted">This dataset has no rows.</p>
   <% else %>
-    <%= render "row", row: @row, columns: @columns %>
+    <%= render "exoplanet", exoplanet: @exoplanet %>
 
     <%= link_to "Surprise me again", random_dataset_path(@dataset), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
   <% end %>

@@ -28,42 +28,21 @@ RSpec.describe ImportExoplanetsJob, type: :job do
       expect(dataset.source_url).to eq(ImportExoplanetsJob::EXOPLANET_URL)
     end
 
-    it "creates a dataset column for every column definition, in order" do
+    it "creates a typed Exoplanet row for each CSV row with numeric fields cast" do
       described_class.perform_now
 
-      dataset = Dataset.find_by!(name: "Confirmed Exoplanets")
-      columns = dataset.dataset_columns.order(:position)
+      exoplanet = Exoplanet.find_by(pl_name: "Kepler-442 b")
 
-      expect(columns.pluck(:name)).to eq(ImportExoplanetsJob::COLUMN_DEFS.keys)
-      expect(columns.first).to have_attributes(
-        display_name: "Planet Name",
-        data_type: "string",
-        position: 0
-      )
-      expect(columns.last).to have_attributes(
-        display_name: "Distance (parsecs)",
-        data_type: "float",
-        position: 9
-      )
-    end
-
-    it "stores each CSV row as jsonb data keyed by column name" do
-      described_class.perform_now
-
-      dataset = Dataset.find_by!(name: "Confirmed Exoplanets")
-      row = dataset.dataset_rows.find_by("data ->> 'pl_name' = ?", "Kepler-442 b")
-
-      expect(row.data).to eq(
-        "pl_name" => "Kepler-442 b",
-        "hostname" => "Kepler-442",
-        "discoverymethod" => "Transit",
-        "disc_year" => "2015",
-        "pl_orbper" => "112.3",
-        "pl_rade" => "1.34",
-        "pl_bmasse" => "2.36",
-        "pl_eqt" => "233",
-        "st_teff" => "4402",
-        "sy_dist" => "370.6"
+      expect(exoplanet).to have_attributes(
+        hostname: "Kepler-442",
+        discoverymethod: "Transit",
+        disc_year: 2015,
+        pl_orbper: 112.3,
+        pl_rade: 1.34,
+        pl_bmasse: 2.36,
+        pl_eqt: 233.0,
+        st_teff: 4402.0,
+        sy_dist: 370.6
       )
     end
 
@@ -75,7 +54,7 @@ RSpec.describe ImportExoplanetsJob, type: :job do
       expect(dataset.row_count).to eq(2)
     end
 
-    it "replaces existing rows and columns on re-import instead of duplicating them" do
+    it "replaces existing rows on re-import instead of duplicating them" do
       described_class.perform_now
       dataset = Dataset.find_by!(name: "Confirmed Exoplanets")
       original_dataset_id = dataset.id
@@ -89,10 +68,9 @@ RSpec.describe ImportExoplanetsJob, type: :job do
       expect(Dataset.where(name: "Confirmed Exoplanets").count).to eq(1)
       dataset.reload
       expect(dataset.id).to eq(original_dataset_id)
-      expect(dataset.dataset_columns.count).to eq(ImportExoplanetsJob::COLUMN_DEFS.size)
-      expect(dataset.dataset_rows.count).to eq(1)
+      expect(Exoplanet.count).to eq(1)
       expect(dataset.row_count).to eq(1)
-      expect(dataset.dataset_rows.first.data["pl_name"]).to eq("TRAPPIST-1 e")
+      expect(Exoplanet.first.pl_name).to eq("TRAPPIST-1 e")
     end
 
     context "and the CSV has no data rows" do
@@ -102,7 +80,7 @@ RSpec.describe ImportExoplanetsJob, type: :job do
         described_class.perform_now
 
         dataset = Dataset.find_by!(name: "Confirmed Exoplanets")
-        expect(dataset.dataset_rows.count).to eq(0)
+        expect(Exoplanet.count).to eq(0)
         expect(dataset.row_count).to eq(0)
       end
     end
