@@ -9,14 +9,15 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Browse imported datasets and their rows (read-only, no auth yet)
-  resources :datasets, only: [ :index, :show ] do
-    member do
-      get :random
-      get :extremes
-      get :systems
-    end
-  end
+  # Confirmed exoplanets and their host stars, the app's one focused experience
+  # (read-only, no auth yet)
+  get "systems", to: "systems#index"
+  get "systems/:hostname", to: "systems#show", as: :system
+
+  get "exoplanets/random", to: "exoplanets#random", as: :random_exoplanet
+  resources :exoplanets, only: [ :index, :show ]
+
+  get "extremes", to: "extremes#index"
 
   # Defines the root path route ("/")
   root "home#index"

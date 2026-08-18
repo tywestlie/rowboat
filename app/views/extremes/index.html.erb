@@ -1,11 +1,7 @@
-<% content_for :title, "Extremes: #{@dataset.name}" %>
+<% content_for :title, "Extremes" %>
 
 <div class="flex flex-col gap-8">
-  <p>
-    <%= link_to "← All datasets", datasets_path, class: "inline-flex min-h-11 items-center text-xs text-muted hover:text-amber" %>
-  </p>
-
-  <%= render "nav", dataset: @dataset, active: :extremes %>
+  <%= render "shared/nav", active: :extremes %>
 
   <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Extremes leaderboard</h1>
 
@@ -19,7 +15,7 @@
         <ol class="overflow-hidden rounded-lg border border-grid-line bg-panel">
           <% rows.each do |exoplanet| %>
             <li class="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-grid-line px-4 py-3 text-sm last:border-b-0">
-              <% DatasetsHelper::EXOPLANET_COLUMNS.each do |column| %>
+              <% ExoplanetsHelper::EXOPLANET_COLUMNS.each do |column| %>
                 <span>
                   <span class="text-muted"><%= column[:label] %>:</span>
                   <span class="text-signal <%= column[:numeric] ? "font-mono" : "" %>"><%= exoplanet.public_send(column[:name]) %></span>

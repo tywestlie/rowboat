@@ -55,7 +55,7 @@ const generateLogTicks = (scale) => {
 // two charts share one visual and interaction language.
 export default class extends Controller {
   static targets = ["canvas", "tooltip"]
-  static values = { points: Array, datasetId: Number }
+  static values = { points: Array }
 
   connect() {
     this.plotted = []
@@ -307,7 +307,7 @@ export default class extends Controller {
 
     if (!point) return
 
-    const url = `/datasets/${this.datasetIdValue}?hostname=${encodeURIComponent(point.hostname)}`
+    const url = `/systems/${encodeURIComponent(point.hostname)}`
 
     if (window.Turbo) {
       window.Turbo.visit(url)

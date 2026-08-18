@@ -1,7 +1,8 @@
-<% content_for :title, "Rowboat" %>
+<% content_for :title, "Parallax" %>
 
 <section class="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
   <h1 class="font-display text-4xl font-semibold tracking-tight text-signal sm:text-5xl lg:text-6xl">Parallax</h1>
-  <%= link_to "Get Started", datasets_path,
+  <p class="max-w-md text-muted">Explore confirmed exoplanets and their host stars, pulled from NASA's Exoplanet Archive.</p>
+  <%= link_to "Explore Star Systems", systems_path,
         class: "inline-flex min-h-11 items-center rounded-md bg-amber px-6 py-2 font-medium text-space-navy transition hover:brightness-110" %>
 </section>

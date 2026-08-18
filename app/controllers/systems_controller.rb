@@ -1,70 +1,29 @@
-class DatasetsController < ApplicationController
-  def index
-    @datasets = Dataset.order(:name)
-  end
-
+class SystemsController < ApplicationController
   MIN_MULTI_PLANET_COUNT = 2
   SPECTRAL_CLASSES = %w[O B A F G K M].freeze
 
-  def show
-    @dataset = Dataset.find(params[:id])
-    @host = params[:hostname].presence
-    @exoplanets = filtered_exoplanets.order(:id).page(params[:page]).per(50)
-    @starfield_points = starfield_points
-    @starfield_mode = system_mode? ? "system" : "sky"
-    @stellar_host = @host ? @exoplanets.first&.stellar_host : nil
-  end
-
-  def systems
-    @dataset = Dataset.find(params[:id])
+  def index
     @include_single_planet = params[:all] == "1"
     @systems = system_counts
     @systems_chart_points = systems_chart_points
   end
 
-  def random
-    @dataset = Dataset.find(params[:id])
-    @exoplanet = Exoplanet.order(Arel.sql("RANDOM()")).first
-  end
-
-  def extremes
-    @dataset = Dataset.find(params[:id])
-
-    @leaderboards = {
-      "Hottest" => Exoplanet.where.not(pl_eqt: nil).order(pl_eqt: :desc).limit(5),
-      "Coldest" => Exoplanet.where.not(pl_eqt: nil).order(pl_eqt: :asc).limit(5),
-      "Closest to Earth-size" => Exoplanet.where.not(pl_rade: nil).order(Arel.sql("ABS(pl_rade - 1.0) ASC")).limit(5),
-      "Most recently discovered" => Exoplanet.where.not(disc_year: nil).order(disc_year: :desc).limit(5),
-      "Closest to Earth" => Exoplanet.where.not(sy_dist: nil).order(sy_dist: :asc).limit(5)
-    }
+  def show
+    @hostname = params[:hostname]
+    @exoplanets = Exoplanet.where(hostname: @hostname).order(:id).page(params[:page]).per(50)
+    @starfield_points = starfield_points
+    @stellar_host = @exoplanets.first&.stellar_host
   end
 
   private
 
-  def filtered_exoplanets
-    return Exoplanet.all unless @host
-
-    Exoplanet.where(hostname: @host)
-  end
-
-  # Within a single system, sy_dist (distance from Earth) is the same for every
-  # planet, so it collapses to a single x position when filtered to one host.
-  # Orbital period varies planet-to-planet and is more informative here instead.
-  def system_mode?
-    @host.present? && @starfield_points.present? && @starfield_points.all? { |p| p[:pl_orbper].present? }
-  end
-
   def starfield_points
-    orbital_required = @host.present?
-
-    scope = filtered_exoplanets.where.not(pl_rade: nil).where.not(sy_dist: nil).where.not(pl_eqt: nil)
-    scope = scope.where.not(pl_orbper: nil) if orbital_required
-
-    scope.pluck(:id, :pl_name, :pl_rade, :sy_dist, :pl_eqt, :pl_orbper).map do |id, pl_name, pl_rade, sy_dist, pl_eqt, pl_orbper|
-      point = { id: id, pl_name: pl_name, pl_rade: pl_rade, sy_dist: sy_dist, pl_eqt: pl_eqt }
-      point[:pl_orbper] = pl_orbper if pl_orbper.present?
-      point
-    end
+    Exoplanet.where(hostname: @hostname)
+      .where.not(pl_rade: nil).where.not(sy_dist: nil).where.not(pl_eqt: nil).where.not(pl_orbper: nil)
+      .pluck(:id, :pl_name, :pl_rade, :sy_dist, :pl_eqt, :pl_orbper)
+      .map do |id, pl_name, pl_rade, sy_dist, pl_eqt, pl_orbper|
+        { id: id, pl_name: pl_name, pl_rade: pl_rade, sy_dist: sy_dist, pl_eqt: pl_eqt, pl_orbper: pl_orbper }
+      end
   end
 
   def system_counts

@@ -1,0 +1,15 @@
+<% content_for :title, "Surprise Me" %>
+
+<div class="flex flex-col gap-6">
+  <%= render "shared/nav", active: :random %>
+
+  <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Surprise me</h1>
+
+  <% if @exoplanet.nil? %>
+    <p class="italic text-muted">This dataset has no rows.</p>
+  <% else %>
+    <%= render "exoplanet", exoplanet: @exoplanet %>
+
+    <%= link_to "Surprise me again", random_exoplanet_path, class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+  <% end %>
+</div>
