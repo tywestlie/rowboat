@@ -65,3 +65,27 @@ resource "aws_lb_listener" "https" {
     target_group_arn = aws_lb_target_group.app.arn
   }
 }
+
+resource "aws_lb_listener_certificate" "parallax" {
+  listener_arn    = aws_lb_listener.https.arn
+  certificate_arn = aws_acm_certificate.parallax.arn
+}
+
+resource "aws_lb_listener_rule" "redirect_rowboat_to_parallax" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 1
+
+  condition {
+    host_header {
+      values = ["rowboat.westlie.dev"]
+    }
+  }
+
+  action {
+    type = "redirect"
+    redirect {
+      host        = "parallax.westlie.dev"
+      status_code = "HTTP_301"
+    }
+  }
+}
