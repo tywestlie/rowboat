@@ -21,3 +21,27 @@ output "acm_validation_records" {
     }
   ]
 }
+
+resource "aws_acm_certificate" "parallax" {
+  domain_name       = "parallax.westlie.dev"
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "${var.app_name}-parallax-cert"
+  }
+}
+
+output "parallax_validation_records" {
+  description = "DNS records to add in Cloudflare for parallax.westlie.dev certificate validation"
+  value = [
+    for dvo in aws_acm_certificate.parallax.domain_validation_options : {
+      name  = dvo.resource_record_name
+      type  = dvo.resource_record_type
+      value = dvo.resource_record_value
+    }
+  ]
+}
