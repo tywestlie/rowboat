@@ -44,7 +44,7 @@ const generateLogTicks = (scale) => {
 
 export default class extends Controller {
   static targets = ["canvas", "tooltip"]
-  static values = { points: Array, datasetId: Number, mode: String }
+  static values = { points: Array, mode: String }
 
   connect() {
     this.plotted = []
@@ -282,7 +282,7 @@ export default class extends Controller {
 
     if (!point) return
 
-    const url = `/datasets/${this.datasetIdValue}/rows/${point.id}`
+    const url = `/exoplanets/${point.id}`
 
     if (window.Turbo) {
       window.Turbo.visit(url)

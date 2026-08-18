@@ -1,13 +1,13 @@
 <%
   nav_items = [
-    [:systems, "Systems", systems_dataset_path(dataset)],
-    [:all_planets, "All Planets", dataset_path(dataset)],
-    [:random, "Surprise Me", random_dataset_path(dataset)],
-    [:extremes, "Extremes", extremes_dataset_path(dataset)]
+    [:systems, "Star Systems", systems_path],
+    [:exoplanets, "All Planets", exoplanets_path],
+    [:random, "Surprise Me", random_exoplanet_path],
+    [:extremes, "Extremes", extremes_path]
   ]
 %>
 <nav class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-grid-line bg-panel px-4 py-3 sm:px-6">
-  <%= link_to dataset.name, systems_dataset_path(dataset), class: "font-display text-base font-semibold tracking-tight text-signal hover:text-amber sm:text-lg" %>
+  <%= link_to "Parallax", root_path, class: "font-display text-base font-semibold tracking-tight text-signal hover:text-amber sm:text-lg" %>
 
   <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
     <% nav_items.each do |key, label, path| %>

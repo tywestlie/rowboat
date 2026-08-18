@@ -1,0 +1,94 @@
+<% content_for :title, @hostname %>
+
+<div class="flex flex-col gap-6">
+  <%= render "shared/nav", active: :systems %>
+
+  <div class="flex flex-col gap-2">
+    <p>
+      <%= link_to "← All systems", systems_path, class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+    </p>
+
+    <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">
+      <%= @hostname %>
+    </h1>
+
+    <p class="text-sm text-muted">
+      Showing <%= number_with_delimiter(@exoplanets.total_count) %> planet<%= "s" unless @exoplanets.total_count == 1 %> around
+      <span class="text-signal"><%= @hostname %></span>
+    </p>
+  </div>
+
+  <% if @stellar_host.present? %>
+    <div class="rounded-lg border border-grid-line bg-panel px-4 py-3">
+      <h2 class="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Host Star</h2>
+      <dl class="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+        <div>
+          <dt class="text-xs text-muted">Spectral Type</dt>
+          <dd class="text-signal"><%= @stellar_host.st_spectype.presence || "—" %></dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">Temperature (K)</dt>
+          <dd class="font-mono text-signal"><%= @stellar_host.st_teff || "—" %></dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">Mass (Solar masses)</dt>
+          <dd class="font-mono text-signal"><%= @stellar_host.st_mass || "—" %></dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">Radius (Solar radii)</dt>
+          <dd class="font-mono text-signal"><%= @stellar_host.st_rad || "—" %></dd>
+        </div>
+      </dl>
+    </div>
+  <% end %>
+
+  <% if @starfield_points.present? %>
+    <div
+      data-controller="starfield"
+      data-starfield-points-value="<%= @starfield_points.to_json %>"
+      data-starfield-mode-value="system"
+      class="relative"
+    >
+      <canvas data-starfield-target="canvas" class="block w-full rounded-lg border border-grid-line"></canvas>
+      <div
+        data-starfield-target="tooltip"
+        class="pointer-events-none fixed z-10 hidden rounded-md border border-grid-line bg-panel px-3 py-2 text-xs shadow-lg"
+      ></div>
+    </div>
+  <% end %>
+
+  <% if @exoplanets.empty? %>
+    <p class="italic text-muted">This dataset has no rows.</p>
+  <% else %>
+    <div class="overflow-x-auto rounded-lg border border-grid-line bg-panel">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead>
+          <tr>
+            <% ExoplanetsHelper::EXOPLANET_COLUMNS.each do |column| %>
+              <th class="border-b border-grid-line px-4 py-3 <%= column[:numeric] ? "text-right" : "text-left" %> text-xs font-medium uppercase tracking-wider text-muted">
+                <%= column[:label] %>
+              </th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% @exoplanets.each do |exoplanet| %>
+            <tr>
+              <% ExoplanetsHelper::EXOPLANET_COLUMNS.each do |column| %>
+                <td class="border-b border-grid-line px-4 py-2 <%= column[:numeric] ? "text-right font-mono" : "" %> text-signal">
+                  <% if column[:name] == :pl_name %>
+                    <%= link_to exoplanet.public_send(column[:name]), exoplanet_path(exoplanet), class: "text-amber hover:underline" %>
+                  <% else %>
+                    <%= exoplanet.public_send(column[:name]) %>
+                  <% end %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%= paginate @exoplanets %>
+  <% end %>
+</div>

@@ -1,6 +1,6 @@
 <div class="rounded-lg border border-grid-line bg-panel p-4 sm:p-6">
   <dl class="divide-y divide-grid-line">
-    <% DatasetsHelper::EXOPLANET_COLUMNS.each do |column| %>
+    <% ExoplanetsHelper::EXOPLANET_COLUMNS.each do |column| %>
       <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
         <dt class="text-xs font-medium uppercase tracking-wider text-muted"><%= column[:label] %></dt>
         <dd class="text-signal <%= column[:numeric] ? "font-mono" : "" %> sm:text-right"><%= exoplanet.public_send(column[:name]) %></dd>

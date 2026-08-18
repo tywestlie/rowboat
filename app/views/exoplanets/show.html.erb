@@ -1,0 +1,19 @@
+<% content_for :title, @exoplanet.pl_name %>
+
+<div class="flex flex-col gap-6">
+  <%= render "shared/nav", active: :exoplanets %>
+
+  <p>
+    <%= link_to "← All Planets", exoplanets_path, class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+  </p>
+
+  <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">
+    <%= @exoplanet.pl_name %>
+  </h1>
+
+  <%= render "exoplanet", exoplanet: @exoplanet %>
+
+  <% if @exoplanet.hostname.present? %>
+    <%= link_to "View #{@exoplanet.hostname} system", system_path(@exoplanet.hostname), class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+  <% end %>
+</div>

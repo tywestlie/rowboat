@@ -1,4 +1,4 @@
-module DatasetsHelper
+module ExoplanetsHelper
   EXOPLANET_COLUMNS = [
     { name: :pl_name, label: "Planet Name", numeric: false },
     { name: :hostname, label: "Host Star", numeric: false },
@@ -11,8 +11,4 @@ module DatasetsHelper
     { name: :st_teff, label: "Host Star Temp (K)", numeric: true },
     { name: :sy_dist, label: "Distance (parsecs)", numeric: true }
   ].freeze
-
-  def exoplanets_dataset?(dataset)
-    dataset.name == "Confirmed Exoplanets"
-  end
 end
