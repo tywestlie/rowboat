@@ -32,12 +32,12 @@ CREATE TABLE public.ar_internal_metadata (
 CREATE TABLE public.datasets (
     id bigint NOT NULL,
     name character varying,
-    description text,
     source_url character varying,
     imported_at timestamp(6) without time zone,
     row_count integer,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    description text
 );
 
 
@@ -295,8 +295,12 @@ ALTER TABLE ONLY public.queries
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260818210300'),
+('20260818210000'),
 ('20260818202219'),
 ('20260818202217'),
-('20260818202101'),
-('20260818202100');
+('20260806191744'),
+('20260806191743'),
+('20260806191742'),
+('20260806191741');
 
