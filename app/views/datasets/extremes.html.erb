@@ -17,13 +17,12 @@
         <p class="italic text-muted">No data available.</p>
       <% else %>
         <ol class="overflow-hidden rounded-lg border border-grid-line bg-panel">
-          <% rows.each do |row| %>
+          <% rows.each do |exoplanet| %>
             <li class="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-grid-line px-4 py-3 text-sm last:border-b-0">
-              <% @columns.each do |column| %>
-                <% numeric = column.data_type.in?(%w[integer float]) %>
+              <% DatasetsHelper::EXOPLANET_COLUMNS.each do |column| %>
                 <span>
-                  <span class="text-muted"><%= column.display_name.presence || column.name %>:</span>
-                  <span class="text-signal <%= numeric ? "font-mono" : "" %>"><%= row.data[column.name] %></span>
+                  <span class="text-muted"><%= column[:label] %>:</span>
+                  <span class="text-signal <%= column[:numeric] ? "font-mono" : "" %>"><%= exoplanet.public_send(column[:name]) %></span>
                 </span>
               <% end %>
             </li>

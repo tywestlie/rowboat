@@ -28,42 +28,21 @@ RSpec.describe ImportStellarHostsJob, type: :job do
       expect(dataset.source_url).to eq(ImportStellarHostsJob::STELLAR_HOSTS_URL)
     end
 
-    it "creates a dataset column for every column definition, in order" do
+    it "creates a typed StellarHost row for each CSV row with numeric fields cast" do
       described_class.perform_now
 
-      dataset = Dataset.find_by!(name: "Stellar Hosts")
-      columns = dataset.dataset_columns.order(:position)
+      stellar_host = StellarHost.find_by(hostname: "Kepler-442")
 
-      expect(columns.pluck(:name)).to eq(ImportStellarHostsJob::COLUMN_DEFS.keys)
-      expect(columns.first).to have_attributes(
-        display_name: "Host Star",
-        data_type: "string",
-        position: 0
-      )
-      expect(columns.last).to have_attributes(
-        display_name: "Declination",
-        data_type: "float",
-        position: 9
-      )
-    end
-
-    it "stores each CSV row as jsonb data keyed by column name" do
-      described_class.perform_now
-
-      dataset = Dataset.find_by!(name: "Stellar Hosts")
-      row = dataset.dataset_rows.find_by("data ->> 'hostname' = ?", "Kepler-442")
-
-      expect(row.data).to eq(
-        "hostname" => "Kepler-442",
-        "st_spectype" => "K5 V",
-        "st_teff" => "4402",
-        "st_rad" => "0.60",
-        "st_mass" => "0.61",
-        "st_met" => "-0.37",
-        "st_lum" => "-1.202",
-        "sy_dist" => "370.6",
-        "ra" => "285.6",
-        "dec" => "39.28"
+      expect(stellar_host).to have_attributes(
+        st_spectype: "K5 V",
+        st_teff: 4402.0,
+        st_rad: 0.60,
+        st_mass: 0.61,
+        st_met: -0.37,
+        st_lum: -1.202,
+        sy_dist: 370.6,
+        ra: 285.6,
+        dec: 39.28
       )
     end
 
@@ -75,7 +54,7 @@ RSpec.describe ImportStellarHostsJob, type: :job do
       expect(dataset.row_count).to eq(2)
     end
 
-    it "replaces existing rows and columns on re-import instead of duplicating them" do
+    it "replaces existing rows on re-import instead of duplicating them" do
       described_class.perform_now
       dataset = Dataset.find_by!(name: "Stellar Hosts")
       original_dataset_id = dataset.id
@@ -89,10 +68,9 @@ RSpec.describe ImportStellarHostsJob, type: :job do
       expect(Dataset.where(name: "Stellar Hosts").count).to eq(1)
       dataset.reload
       expect(dataset.id).to eq(original_dataset_id)
-      expect(dataset.dataset_columns.count).to eq(ImportStellarHostsJob::COLUMN_DEFS.size)
-      expect(dataset.dataset_rows.count).to eq(1)
+      expect(StellarHost.count).to eq(1)
       expect(dataset.row_count).to eq(1)
-      expect(dataset.dataset_rows.first.data["hostname"]).to eq("TRAPPIST-1")
+      expect(StellarHost.first.hostname).to eq("TRAPPIST-1")
     end
 
     context "and the CSV has multiple rows for the same hostname" do
@@ -107,11 +85,11 @@ RSpec.describe ImportStellarHostsJob, type: :job do
         described_class.perform_now
 
         dataset = Dataset.find_by!(name: "Stellar Hosts")
-        expect(dataset.dataset_rows.count).to eq(1)
+        expect(StellarHost.count).to eq(1)
         expect(dataset.row_count).to eq(1)
-        expect(dataset.dataset_rows.first.data).to include(
-          "st_spectype" => "G0 V",
-          "st_lum" => "-1.05"
+        expect(StellarHost.first).to have_attributes(
+          st_spectype: "G0 V",
+          st_lum: -1.05
         )
       end
     end
@@ -123,7 +101,7 @@ RSpec.describe ImportStellarHostsJob, type: :job do
         described_class.perform_now
 
         dataset = Dataset.find_by!(name: "Stellar Hosts")
-        expect(dataset.dataset_rows.count).to eq(0)
+        expect(StellarHost.count).to eq(0)
         expect(dataset.row_count).to eq(0)
       end
     end

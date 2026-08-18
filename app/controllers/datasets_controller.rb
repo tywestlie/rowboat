@@ -1,26 +1,22 @@
 class DatasetsController < ApplicationController
   def index
-    @datasets = Dataset.order(:name).includes(:dataset_columns)
+    @datasets = Dataset.order(:name)
   end
 
-  STARFIELD_FIELDS = %w[pl_rade sy_dist pl_eqt].freeze
-  ORBITAL_PERIOD_FIELD = "pl_orbper"
   MIN_MULTI_PLANET_COUNT = 2
   SPECTRAL_CLASSES = %w[O B A F G K M].freeze
 
   def show
     @dataset = Dataset.find(params[:id])
-    @columns = @dataset.dataset_columns.order(:position)
     @host = params[:hostname].presence
-    @rows = filtered_rows.order(:id).page(params[:page]).per(50)
-    @starfield_points = starfield_points if starfield_eligible?
+    @exoplanets = filtered_exoplanets.order(:id).page(params[:page]).per(50)
+    @starfield_points = starfield_points
     @starfield_mode = system_mode? ? "system" : "sky"
-    @stellar_host = stellar_host_row if @host
+    @stellar_host = @host ? @exoplanets.first&.stellar_host : nil
   end
 
   def systems
     @dataset = Dataset.find(params[:id])
-    @columns = @dataset.dataset_columns.order(:position)
     @include_single_planet = params[:all] == "1"
     @systems = system_counts
     @systems_chart_points = systems_chart_points
@@ -28,84 +24,55 @@ class DatasetsController < ApplicationController
 
   def random
     @dataset = Dataset.find(params[:id])
-    @columns = @dataset.dataset_columns.order(:position)
-    @row = @dataset.dataset_rows.order(Arel.sql("RANDOM()")).first
+    @exoplanet = Exoplanet.order(Arel.sql("RANDOM()")).first
   end
 
   def extremes
     @dataset = Dataset.find(params[:id])
-    @columns = @dataset.dataset_columns.order(:position)
 
     @leaderboards = {
-      "Hottest" => numeric_top(:pl_eqt, :desc),
-      "Coldest" => numeric_top(:pl_eqt, :asc),
-      "Closest to Earth-size" => numeric_top(:pl_rade, :asc, distance_from: 1.0),
-      "Most recently discovered" => numeric_top(:disc_year, :desc),
-      "Closest to Earth" => numeric_top(:sy_dist, :asc)
+      "Hottest" => Exoplanet.where.not(pl_eqt: nil).order(pl_eqt: :desc).limit(5),
+      "Coldest" => Exoplanet.where.not(pl_eqt: nil).order(pl_eqt: :asc).limit(5),
+      "Closest to Earth-size" => Exoplanet.where.not(pl_rade: nil).order(Arel.sql("ABS(pl_rade - 1.0) ASC")).limit(5),
+      "Most recently discovered" => Exoplanet.where.not(disc_year: nil).order(disc_year: :desc).limit(5),
+      "Closest to Earth" => Exoplanet.where.not(sy_dist: nil).order(sy_dist: :asc).limit(5)
     }
   end
 
   private
 
-  def filtered_rows
-    return @dataset.dataset_rows unless @host
+  def filtered_exoplanets
+    return Exoplanet.all unless @host
 
-    @dataset.dataset_rows.where("data->>'hostname' = ?", @host)
-  end
-
-  def has_hostname_column?
-    @columns.map(&:name).include?("hostname")
-  end
-
-  def has_orbital_period_column?
-    @columns.map(&:name).include?(ORBITAL_PERIOD_FIELD)
+    Exoplanet.where(hostname: @host)
   end
 
   # Within a single system, sy_dist (distance from Earth) is the same for every
   # planet, so it collapses to a single x position when filtered to one host.
   # Orbital period varies planet-to-planet and is more informative here instead.
   def system_mode?
-    @host.present? && has_orbital_period_column? &&
-      @starfield_points.present? && @starfield_points.all? { |p| p[:pl_orbper].present? }
-  end
-
-  def starfield_eligible?
-    (STARFIELD_FIELDS - @columns.map(&:name)).empty?
+    @host.present? && @starfield_points.present? && @starfield_points.all? { |p| p[:pl_orbper].present? }
   end
 
   def starfield_points
-    orbital_required = @host.present? && has_orbital_period_column?
+    orbital_required = @host.present?
 
-    filtered_rows.pluck(:id, :data).filter_map do |id, data|
-      next if STARFIELD_FIELDS.any? { |field| data[field].blank? }
-      next if orbital_required && data[ORBITAL_PERIOD_FIELD].blank?
+    scope = filtered_exoplanets.where.not(pl_rade: nil).where.not(sy_dist: nil).where.not(pl_eqt: nil)
+    scope = scope.where.not(pl_orbper: nil) if orbital_required
 
-      point = {
-        id: id,
-        pl_name: data["pl_name"],
-        pl_rade: data["pl_rade"].to_f,
-        sy_dist: data["sy_dist"].to_f,
-        pl_eqt: data["pl_eqt"].to_f
-      }
-      point[:pl_orbper] = data[ORBITAL_PERIOD_FIELD].to_f if data[ORBITAL_PERIOD_FIELD].present?
+    scope.pluck(:id, :pl_name, :pl_rade, :sy_dist, :pl_eqt, :pl_orbper).map do |id, pl_name, pl_rade, sy_dist, pl_eqt, pl_orbper|
+      point = { id: id, pl_name: pl_name, pl_rade: pl_rade, sy_dist: sy_dist, pl_eqt: pl_eqt }
+      point[:pl_orbper] = pl_orbper if pl_orbper.present?
       point
     end
   end
 
   def system_counts
-    return [] unless has_hostname_column?
-
-    counts = @dataset.dataset_rows.group(Arel.sql("data->>'hostname'")).count
-    counts = counts.reject { |name, _| name.blank? }
+    counts = Exoplanet.where.not(hostname: [ nil, "" ]).group(:hostname).count
     counts = counts.select { |_, count| count >= MIN_MULTI_PLANET_COUNT } unless @include_single_planet
 
     counts.sort_by { |name, count| [ -count, name ] }
           .map { |name, count| { hostname: name, planet_count: count } }
-  end
-
-  def has_distance_and_temp_columns?
-    names = @columns.map(&:name)
-    names.include?("sy_dist") && names.include?("pl_eqt")
   end
 
   # Distance is the same for every planet in a system, so any row's value
@@ -113,16 +80,11 @@ class DatasetsController < ApplicationController
   # per system. Systems where no row has a usable value for either field are
   # dropped rather than plotted with a fabricated average.
   def systems_chart_points
-    return [] if @systems.empty? || !has_distance_and_temp_columns?
+    return [] if @systems.empty?
 
     hostnames = @systems.map { |system| system[:hostname] }
-    values_by_host = @dataset.dataset_rows
-      .where("data->>'hostname' IN (?)", hostnames)
-      .pluck(
-        Arel.sql("data->>'hostname'"),
-        Arel.sql("NULLIF(data->>'sy_dist', '')::float"),
-        Arel.sql("NULLIF(data->>'pl_eqt', '')::float")
-      )
+    values_by_host = Exoplanet.where(hostname: hostnames)
+      .pluck(:hostname, :sy_dist, :pl_eqt)
       .group_by { |hostname, _, _| hostname }
 
     spectral_classes = spectral_classes_by_hostname(hostnames)
@@ -147,33 +109,9 @@ class DatasetsController < ApplicationController
   # spectral class used for coloring. Hosts with no Stellar Hosts row, a blank
   # st_spectype, or an unrecognized leading letter get nil (falls back to amber).
   def spectral_classes_by_hostname(hostnames)
-    stellar_hosts = Dataset.find_by(name: "Stellar Hosts")
-    return {} unless stellar_hosts
-
-    stellar_hosts.dataset_rows
-      .where("data->>'hostname' IN (?)", hostnames)
-      .pluck(Arel.sql("data->>'hostname'"), Arel.sql("data->>'st_spectype'"))
-      .each_with_object({}) do |(hostname, spectype), map|
-        letter = spectype.to_s.strip[0]&.upcase
-        map[hostname] = letter if SPECTRAL_CLASSES.include?(letter)
-      end
-  end
-
-  def stellar_host_row
-    stellar_hosts = Dataset.find_by(name: "Stellar Hosts")
-    return nil unless stellar_hosts
-
-    stellar_hosts.dataset_rows.find_by("data->>'hostname' = ?", @host)&.data
-  end
-
-  def numeric_top(field, direction, distance_from: nil)
-    field_expr = ActiveRecord::Base.sanitize_sql_array([ "data->>?", field.to_s ])
-    cast = "(#{field_expr})::float"
-    scope = @dataset.dataset_rows.where(Arel.sql("#{field_expr} IS NOT NULL"))
-
-    order_expr = distance_from ? "ABS(#{cast} - #{distance_from})" : cast
-    order_direction = distance_from ? :asc : direction
-
-    scope.order(Arel.sql("#{order_expr} #{order_direction.to_s.upcase}")).limit(5)
+    StellarHost.where(hostname: hostnames).pluck(:hostname, :st_spectype).each_with_object({}) do |(hostname, spectype), map|
+      letter = spectype.to_s.strip[0]&.upcase
+      map[hostname] = letter if SPECTRAL_CLASSES.include?(letter)
+    end
   end
 end

@@ -16,8 +16,6 @@ Rails.application.routes.draw do
       get :extremes
       get :systems
     end
-
-    resources :rows, only: [ :show ], controller: "dataset_rows"
   end
 
   # Defines the root path route ("/")

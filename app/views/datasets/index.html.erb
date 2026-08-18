@@ -17,9 +17,12 @@
           <% @datasets.each do |dataset| %>
             <tr>
               <td class="border-b border-grid-line px-4 py-3 text-signal">
-                <% link_target = has_hostname_column?(dataset.dataset_columns) ? systems_dataset_path(dataset) : dataset_path(dataset) %>
-                <%= link_to dataset.name, link_target,
-                      class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+                <% if exoplanets_dataset?(dataset) %>
+                  <%= link_to dataset.name, systems_dataset_path(dataset),
+                        class: "inline-flex min-h-11 items-center text-amber hover:underline" %>
+                <% else %>
+                  <%= dataset.name %>
+                <% end %>
               </td>
               <td class="border-b border-grid-line px-4 py-3 text-right font-mono text-signal"><%= number_with_delimiter(dataset.row_count) %></td>
               <td class="border-b border-grid-line px-4 py-3 text-muted"><%= dataset.imported_at&.to_fs(:long) || "Never" %></td>
