@@ -19,23 +19,27 @@ The repo/app is currently named "rowboat" (a leftover pun: "row" as in CSV rows,
 
 ```
 Dataset
-  - name, source_url, imported_at, row_count
-  - has_many :dataset_columns, :dataset_rows, :queries
+  - name, description, source_url, imported_at, row_count
+  - has_many :queries
+  - metadata-only registry row; does not store the imported rows itself
 
-DatasetColumn
-  - belongs_to :dataset
-  - name, display_name, data_type, position
+Exoplanet
+  - pl_name, hostname, discoverymethod, disc_year:integer,
+    pl_orbper/pl_rade/pl_bmasse/pl_eqt/st_teff/sy_dist:float
+  - belongs_to :stellar_host, foreign_key: :hostname, primary_key: :hostname, optional: true
+  - indexed on hostname
 
-DatasetRow
-  - belongs_to :dataset
-  - data (jsonb — flexible schema per dataset, deliberate choice)
+StellarHost
+  - hostname (unique index), st_spectype,
+    st_teff/st_rad/st_mass/st_met/st_lum/sy_dist/ra/dec:float
+  - has_many :exoplanets, foreign_key: :hostname, primary_key: :hostname
 
 Query
   - belongs_to :dataset
   - question, generated_query (jsonb), result_summary
 ```
 
-**Known tradeoff, deliberately deferred**: `dataset_rows.data` is a jsonb blob with no per-field types (everything comes in as strings from CSV import). This makes numeric filtering/aggregation require explicit casts (`(data->>'pl_rade')::float`), which is more fragile for LLM-generated queries than typed columns would be. Decided to keep this simple for now and revisit once the query feature's actual needs are clearer, don't unprompted refactor to per-dataset typed tables without discussing it first, this was an explicit, considered decision.
+Reworked from a generic jsonb-based Dataset/DatasetColumn/DatasetRow system (flexible schema, no per-field types, needed explicit casts like `(data->>'pl_rade')::float`) to typed per-dataset tables with real associations. That jsonb design was previously a deliberate, discussed tradeoff; it was revisited and replaced once the query feature's needs became clearer, per the plan this superseded. `Dataset` rows are still created/updated by the import jobs (name, source_url, imported_at, row_count) for the datasets index and future registry use, but no longer own the imported data.
 
 No `User` model currently exists. Auth was deliberately deferred until the core AI-query feature works. Don't add auth unprompted.
 
@@ -47,9 +51,9 @@ No `User` model currently exists. Auth was deliberately deferred until the core 
 
 ## What's next (in planned order)
 
-1. **In progress**: `DatasetsController` with `index` (list datasets) and `show` (paginated raw data table) actions, using `kaminari` for pagination. Routes: `resources :datasets, only: [:index, :show]`
-2. NeoWs (Near Earth Object) importer — second data source, JSON-based (needs flattening, unlike the clean CSV exoplanet source)
-3. The actual AI query feature: natural language question → LLM translates to a structured query (filter/aggregate spec, NOT raw SQL, this was a deliberate choice, "Option A" in earlier planning) → execute against `dataset_rows` → return answer + visualization
+1. **Done**: `DatasetsController` with `index`, `show` (paginated table, host filtering, starfield chart), `systems`, `random`, and `extremes` actions, using `kaminari` for pagination, querying `Exoplanet`/`StellarHost` directly.
+2. NeoWs (Near Earth Object) importer — second data source, JSON-based (needs flattening, unlike the clean CSV exoplanet source). Will likely need its own typed table, following the Exoplanet/StellarHost pattern rather than reintroducing a generic jsonb store.
+3. The actual AI query feature: natural language question → LLM translates to a structured query (filter/aggregate spec, NOT raw SQL, this was a deliberate choice, "Option A" in earlier planning) → execute against the typed tables (`Exoplanet`, `StellarHost`, etc.) → return answer + visualization
 4. A separate ECS service for Solid Queue background job processing (not yet built — currently jobs would need `perform_now` or a locally-run `bin/jobs`, no worker exists in production yet)
 
 ## Conventions and preferences
