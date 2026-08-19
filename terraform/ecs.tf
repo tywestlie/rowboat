@@ -40,7 +40,9 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
       Action = ["secretsmanager:GetSecretValue"]
       Resource = [
         aws_secretsmanager_secret.db_password.arn,
-        aws_secretsmanager_secret.rails_master_key.arn
+        aws_secretsmanager_secret.rails_master_key.arn,
+        aws_secretsmanager_secret.anthropic_api_key.arn,
+        aws_secretsmanager_secret.ai_access_code.arn
       ]
     }]
   })
@@ -125,6 +127,14 @@ resource "aws_ecs_task_definition" "app" {
         {
           name      = "RAILS_MASTER_KEY"
           valueFrom = aws_secretsmanager_secret.rails_master_key.arn
+        },
+        {
+          name      = "ANTHROPIC_API_KEY"
+          valueFrom = aws_secretsmanager_secret.anthropic_api_key.arn
+        },
+        {
+          name      = "AI_ACCESS_CODE"
+          valueFrom = aws_secretsmanager_secret.ai_access_code.arn
         }
       ]
 
