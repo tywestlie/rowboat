@@ -52,6 +52,16 @@ class AnswerQuestionJob < ApplicationJob
     message = client.messages.create(
       model: MODEL,
       max_tokens: 512,
+      system: <<~SYSTEM,
+        You answer questions about exoplanets and stellar hosts using only the
+        query result provided in the user message. Do not use any other
+        knowledge, general or otherwise, to answer the question.
+
+        If the query result is empty, or does not actually answer the
+        question asked, say clearly that this app can only answer questions
+        about the imported exoplanet and stellar host dataset. Do not attempt
+        to answer the question from general knowledge in that case.
+      SYSTEM
       messages: [
         {
           role: "user",
@@ -60,8 +70,8 @@ class AnswerQuestionJob < ApplicationJob
 
             Query result: #{result_for_prompt(result)}
 
-            Write a short, plain-English answer to the question based on this result.
-            Do not mention the underlying query or database.
+            Write a short, plain-English answer to the question based only on
+            this result. Do not mention the underlying query or database.
           PROMPT
         }
       ]
