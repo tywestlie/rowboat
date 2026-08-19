@@ -1,8 +1,8 @@
 <% content_for :title, "All Planets" %>
 
-<div class="flex flex-col gap-6">
-  <%= render "shared/nav", active: :exoplanets %>
+<% content_for :active_nav, "exoplanets" %>
 
+<div class="flex flex-col gap-6">
   <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">All Planets</h1>
 
   <% if @starfield_points.present? %>
