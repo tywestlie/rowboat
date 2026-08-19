@@ -4,7 +4,7 @@ This file gives Claude Code persistent context about this project. It's read aut
 
 ## What this app is
 
-An AI-powered data explorer for public astronomy datasets. Users import real data from public APIs, then (eventually) ask natural-language questions about it and get back structured answers and visualizations.
+An AI-powered data explorer for public astronomy datasets. Users import real data from public APIs, browse it (star systems, individual exoplanets, leaderboards of extremes), and ask natural-language questions about it to get back structured answers and visualizations.
 
 The repo/app is currently named "rowboat" (a leftover pun: "row" as in CSV rows, "boat" completing the word). A rename is planned but not yet done, current naming favorite under consideration: "Parallax" or a pun variant that keeps the "row" wordplay (e.g. "Rowllax"). Don't rename anything unprompted, just be aware the current name is provisional.
 
@@ -46,15 +46,16 @@ No `User` model currently exists. Auth was deliberately deferred until the core 
 ## What's built and working
 
 - `ImportExoplanetsJob` (`app/jobs/import_exoplanets_job.rb`) — pulls live data from NASA's Exoplanet Archive (PSCompPars table), confirmed working, imports ~6,300 real rows
-- Rake task `datasets:import_exoplanets` to trigger it
+- `ImportStellarHostsJob` (`app/jobs/import_stellar_hosts_job.rb`) — pulls the companion stellar-host data from the same archive
+- Rake tasks `datasets:import_exoplanets` and `datasets:import_stellar_hosts` (`lib/tasks/import_datasets.rake`) to trigger them
+- Browsing UI, no `DatasetsController` (that was the original plan; it ended up split by resource instead): `HomeController#index` (root), `SystemsController#index`/`#show` (star systems list and per-system detail, `kaminari`-paginated, starfield chart), `ExoplanetsController#index`/`#show`/`#random`, `ExtremesController#index` (leaderboards: hottest, coldest, closest-to-Earth-size, most recent, closest-to-Earth)
+- The AI query feature: natural-language question → LLM translates to a structured query (filter/aggregate spec, NOT raw SQL, this was a deliberate choice, "Option A" in earlier planning) → execute against the typed tables (`Exoplanet`, `StellarHost`) via a whitelisted `QueryTranslator` → return answer + visualization. Gated behind a session-based access code (`AiAccessController`, `AiAuthorization` concern, `AiCredentials` module for the code and Anthropic API key). See `app/jobs/answer_question_job.rb`, `app/services/query_translator.rb`, `app/services/query_executor.rb`, `app/models/queryable_fields.rb`, `app/controllers/questions_controller.rb`. Uses the `anthropic` gem (~> 1.62).
+- A separate ECS service (`rowboat-worker-service`, `terraform/ecs_worker.tf`) runs Solid Queue background job processing via `./bin/jobs`
 - ECS Exec is enabled for production debugging (`dangerzone` / `dangerzone-bash` bash functions in `~/.bashrc` exec into the live task)
 
 ## What's next (in planned order)
 
-1. **Done**: `DatasetsController` with `index`, `show` (paginated table, host filtering, starfield chart), `systems`, `random`, and `extremes` actions, using `kaminari` for pagination, querying `Exoplanet`/`StellarHost` directly.
-2. **Done**: A separate ECS service (`rowboat-worker-service`, `terraform/ecs_worker.tf`) runs Solid Queue background job processing via `./bin/jobs`.
-3. **Done**: The AI query feature: natural language question → LLM translates to a structured query (filter/aggregate spec, NOT raw SQL, this was a deliberate choice, "Option A" in earlier planning) → execute against the typed tables (`Exoplanet`, `StellarHost`) via a whitelisted `QueryTranslator` → return answer + visualization. Gated behind a session-based access code, scoped only to this feature. See `app/jobs/answer_question_job.rb`, `app/services/query_translator.rb`, `app/services/query_executor.rb`, `app/models/queryable_fields.rb`.
-4. NeoWs (Near Earth Object) importer — second data source, JSON-based (needs flattening, unlike the clean CSV exoplanet source). Will likely need its own typed table, following the Exoplanet/StellarHost pattern rather than reintroducing a generic jsonb store.
+1. NeoWs (Near Earth Object) importer — second data source, JSON-based (needs flattening, unlike the clean CSV exoplanet source). Will likely need its own typed table, following the Exoplanet/StellarHost pattern rather than reintroducing a generic jsonb store.
 
 ## Conventions and preferences
 
