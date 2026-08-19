@@ -58,6 +58,10 @@ resource "aws_ecs_task_definition" "worker" {
         {
           name      = "RAILS_MASTER_KEY"
           valueFrom = aws_secretsmanager_secret.rails_master_key.arn
+        },
+        {
+          name      = "ANTHROPIC_API_KEY"
+          valueFrom = aws_secretsmanager_secret.anthropic_api_key.arn
         }
       ]
 

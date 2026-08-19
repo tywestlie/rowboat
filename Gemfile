@@ -22,6 +22,9 @@ gem "ruby-vips", "~> 2.0"
 gem "csv"
 gem "pry"
 
+# Claude API client for natural-language query generation [https://github.com/anthropics/anthropic-sdk-ruby]
+gem "anthropic", "~> 1.62"
+
 # Pagination for dataset row browsing [https://github.com/kaminari/kaminari]
 gem "kaminari"
 

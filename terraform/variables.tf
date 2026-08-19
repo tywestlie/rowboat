@@ -46,6 +46,18 @@ variable "rails_master_key" {
   sensitive   = true
 }
 
+variable "anthropic_api_key" {
+  description = "Anthropic API key for the AI query feature"
+  type        = string
+  sensitive   = true
+}
+
+variable "ai_access_code" {
+  description = "Shared access code gating the AI query feature"
+  type        = string
+  sensitive   = true
+}
+
 variable "github_repo" {
   description = "GitHub repo in owner/name format, for OIDC trust scoping"
   type        = string

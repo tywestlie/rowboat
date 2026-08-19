@@ -35,8 +35,8 @@ StellarHost
   - has_many :exoplanets, foreign_key: :hostname, primary_key: :hostname
 
 Query
-  - belongs_to :dataset
   - question, generated_query (jsonb), result_summary
+  - standalone; no dataset reference (this app is scoped entirely to exoplanets/stellar hosts)
 ```
 
 Reworked from a generic jsonb-based Dataset/DatasetColumn/DatasetRow system (flexible schema, no per-field types, needed explicit casts like `(data->>'pl_rade')::float`) to typed per-dataset tables with real associations. That jsonb design was previously a deliberate, discussed tradeoff; it was revisited and replaced once the query feature's needs became clearer, per the plan this superseded. `Dataset` rows are still created/updated by the import jobs (name, source_url, imported_at, row_count) for the datasets index and future registry use, but no longer own the imported data.
@@ -52,9 +52,9 @@ No `User` model currently exists. Auth was deliberately deferred until the core 
 ## What's next (in planned order)
 
 1. **Done**: `DatasetsController` with `index`, `show` (paginated table, host filtering, starfield chart), `systems`, `random`, and `extremes` actions, using `kaminari` for pagination, querying `Exoplanet`/`StellarHost` directly.
-2. NeoWs (Near Earth Object) importer — second data source, JSON-based (needs flattening, unlike the clean CSV exoplanet source). Will likely need its own typed table, following the Exoplanet/StellarHost pattern rather than reintroducing a generic jsonb store.
-3. The actual AI query feature: natural language question → LLM translates to a structured query (filter/aggregate spec, NOT raw SQL, this was a deliberate choice, "Option A" in earlier planning) → execute against the typed tables (`Exoplanet`, `StellarHost`, etc.) → return answer + visualization
-4. A separate ECS service for Solid Queue background job processing (not yet built — currently jobs would need `perform_now` or a locally-run `bin/jobs`, no worker exists in production yet)
+2. **Done**: A separate ECS service (`rowboat-worker-service`, `terraform/ecs_worker.tf`) runs Solid Queue background job processing via `./bin/jobs`.
+3. **Done**: The AI query feature: natural language question → LLM translates to a structured query (filter/aggregate spec, NOT raw SQL, this was a deliberate choice, "Option A" in earlier planning) → execute against the typed tables (`Exoplanet`, `StellarHost`) via a whitelisted `QueryTranslator` → return answer + visualization. Gated behind a session-based access code, scoped only to this feature. See `app/jobs/answer_question_job.rb`, `app/services/query_translator.rb`, `app/services/query_executor.rb`, `app/models/queryable_fields.rb`.
+4. NeoWs (Near Earth Object) importer — second data source, JSON-based (needs flattening, unlike the clean CSV exoplanet source). Will likely need its own typed table, following the Exoplanet/StellarHost pattern rather than reintroducing a generic jsonb store.
 
 ## Conventions and preferences
 

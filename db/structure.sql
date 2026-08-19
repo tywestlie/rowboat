@@ -106,7 +106,6 @@ ALTER SEQUENCE public.exoplanets_id_seq OWNED BY public.exoplanets.id;
 
 CREATE TABLE public.queries (
     id bigint NOT NULL,
-    dataset_id bigint NOT NULL,
     question text,
     generated_query jsonb,
     result_summary text,
@@ -267,25 +266,10 @@ CREATE INDEX index_exoplanets_on_hostname ON public.exoplanets USING btree (host
 
 
 --
--- Name: index_queries_on_dataset_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_queries_on_dataset_id ON public.queries USING btree (dataset_id);
-
-
---
 -- Name: index_stellar_hosts_on_hostname; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX index_stellar_hosts_on_hostname ON public.stellar_hosts USING btree (hostname);
-
-
---
--- Name: queries fk_rails_9223fd37d7; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.queries
-    ADD CONSTRAINT fk_rails_9223fd37d7 FOREIGN KEY (dataset_id) REFERENCES public.datasets(id);
 
 
 --
@@ -295,6 +279,7 @@ ALTER TABLE ONLY public.queries
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260818234145'),
 ('20260818210300'),
 ('20260818210000'),
 ('20260818202219'),

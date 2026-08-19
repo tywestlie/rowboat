@@ -1,0 +1,22 @@
+<% content_for :title, "Ask - Access Code" %>
+
+<div class="flex flex-col gap-6">
+  <%= render "shared/nav", active: :ask %>
+
+  <div class="mx-auto flex w-full max-w-sm flex-col gap-4 rounded-lg border border-grid-line bg-panel p-6">
+    <h1 class="font-display text-xl font-semibold tracking-tight text-signal">Enter access code</h1>
+    <p class="text-sm text-muted">The natural-language query feature is gated while it's in early testing.</p>
+
+    <% if flash[:alert] %>
+      <p class="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300"><%= flash[:alert] %></p>
+    <% end %>
+
+    <%= form_with url: ai_access_path, method: :post, class: "flex flex-col gap-3" do %>
+      <%= label_tag :code, "Access code", class: "text-sm text-muted" %>
+      <%= text_field_tag :code, nil, autofocus: true, autocomplete: "off",
+            class: "rounded-md border border-grid-line bg-space-navy px-3 py-2 text-signal focus:border-amber focus:outline-none" %>
+      <%= submit_tag "Continue",
+            class: "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md bg-amber px-4 py-2 font-medium text-space-navy transition hover:brightness-110" %>
+    <% end %>
+  </div>
+</div>

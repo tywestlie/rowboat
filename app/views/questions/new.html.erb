@@ -1,0 +1,22 @@
+<% content_for :title, "Ask" %>
+
+<div class="flex flex-col gap-6">
+  <%= render "shared/nav", active: :ask %>
+
+  <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Ask a question</h1>
+  <p class="text-muted">Ask anything about confirmed exoplanets or their host stars, in plain English.</p>
+
+  <%= form_with model: @query, url: questions_path, class: "flex flex-col gap-3" do |f| %>
+    <% if @query.errors.any? %>
+      <p class="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+        <%= @query.errors.full_messages.to_sentence %>
+      </p>
+    <% end %>
+
+    <%= f.label :question, class: "text-sm text-muted" %>
+    <%= f.text_area :question, rows: 3, autofocus: true, placeholder: "e.g. Which host stars have the most confirmed planets?",
+          class: "rounded-md border border-grid-line bg-panel px-3 py-2 text-signal focus:border-amber focus:outline-none" %>
+    <%= f.submit "Ask",
+          class: "inline-flex min-h-11 w-fit cursor-pointer items-center justify-center rounded-md bg-amber px-4 py-2 font-medium text-space-navy transition hover:brightness-110" %>
+  <% end %>
+</div>

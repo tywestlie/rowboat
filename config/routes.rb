@@ -19,6 +19,13 @@ Rails.application.routes.draw do
 
   get "extremes", to: "extremes#index"
 
+  # AI-powered natural-language query feature, gated by a session-based access code
+  get "ask/access", to: "ai_access#new", as: :new_ai_access
+  post "ask/access", to: "ai_access#create", as: :ai_access
+
+  get "ask", to: "questions#new", as: :ask
+  resources :questions, only: [ :create, :show ]
+
   # Defines the root path route ("/")
   root "home#index"
 end
