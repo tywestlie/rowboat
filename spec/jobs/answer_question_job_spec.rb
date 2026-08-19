@@ -42,6 +42,42 @@ RSpec.describe AnswerQuestionJob, type: :job do
     end
   end
 
+  context "when the question is off-topic" do
+    let(:query) { create(:query, question: "How do I cook a hot dog correctly?") }
+
+    before do
+      allow(messages).to receive(:create).and_return(
+        tool_use_response({ "model" => "Exoplanet", "filters" => [] }),
+        text_response("I can only answer questions about the imported exoplanet and stellar host data.")
+      )
+    end
+
+    it "declines instead of answering from general knowledge" do
+      described_class.perform_now(query)
+      query.reload
+
+      expect(query.result_summary).to eq("I can only answer questions about the imported exoplanet and stellar host data.")
+      expect(messages).to have_received(:create).twice
+    end
+  end
+
+  context "when the question is on-topic but matches no records" do
+    before do
+      allow(messages).to receive(:create).and_return(
+        tool_use_response({ "model" => "Exoplanet", "filters" => [ { "field" => "pl_name", "operator" => "=", "value" => "Not A Real Planet" } ] }),
+        text_response("I can only answer questions about the imported exoplanet and stellar host data.")
+      )
+    end
+
+    it "declines instead of guessing, using the grounded summarization call" do
+      described_class.perform_now(query)
+      query.reload
+
+      expect(query.result_summary).to eq("I can only answer questions about the imported exoplanet and stellar host data.")
+      expect(messages).to have_received(:create).twice
+    end
+  end
+
   context "when the model returns a structured query outside the whitelist" do
     before do
       allow(messages).to receive(:create).and_return(
