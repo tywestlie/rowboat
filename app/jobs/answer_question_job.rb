@@ -3,7 +3,7 @@ class AnswerQuestionJob < ApplicationJob
 
   QUERY_TOOL_NAME = "generate_structured_query"
 
-  MODEL = "claude-opus-4-6"
+  MODEL = "claude-opus-5"
 
   def perform(query)
     structured_query = generate_structured_query(query.question)
