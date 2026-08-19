@@ -1,10 +1,21 @@
 <% content_for :title, "Parallax" %>
+<% content_for :hide_nav, "true" %>
 
 <section class="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
   <div class="flex flex-col items-center gap-4">
     <%= render "shared/logo", size: 96 %>
     <h1 class="font-display text-4xl font-semibold tracking-tight text-signal sm:text-5xl lg:text-6xl">Parallax</h1>
   </div>
-  <%= link_to "Explore Star Systems", systems_path,
-        class: "inline-flex min-h-11 items-center rounded-md bg-amber px-6 py-2 font-medium text-space-navy transition hover:brightness-110" %>
+
+  <div class="flex flex-col items-center gap-3">
+    <h2 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl">Ask anything about the exoplanet catalog</h2>
+    <p class="max-w-xl text-muted">Plain-English questions about confirmed exoplanets and their host stars, answered from real NASA archive data.</p>
+  </div>
+
+  <div class="flex flex-wrap items-center justify-center gap-4">
+    <%= link_to "Ask a question", ask_path,
+          class: "inline-flex min-h-11 items-center rounded-md bg-amber px-6 py-2 font-medium text-space-navy transition hover:brightness-110" %>
+    <%= link_to "Explore Star Systems", systems_path,
+          class: "inline-flex min-h-11 items-center rounded-md border border-grid-line px-6 py-2 font-medium text-signal transition hover:border-amber hover:text-amber" %>
+  </div>
 </section>

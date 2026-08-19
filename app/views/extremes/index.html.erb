@@ -1,8 +1,8 @@
 <% content_for :title, "Extremes" %>
 
-<div class="flex flex-col gap-8">
-  <%= render "shared/nav", active: :extremes %>
+<% content_for :active_nav, "extremes" %>
 
+<div class="flex flex-col gap-8">
   <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Extremes leaderboard</h1>
 
   <% @leaderboards.each do |title, rows| %>

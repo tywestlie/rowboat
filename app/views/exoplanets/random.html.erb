@@ -1,8 +1,8 @@
 <% content_for :title, "Surprise Me" %>
 
-<div class="flex flex-col gap-6">
-  <%= render "shared/nav", active: :random %>
+<% content_for :active_nav, "random" %>
 
+<div class="flex flex-col gap-6">
   <h1 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl lg:text-4xl">Surprise me</h1>
 
   <% if @exoplanet.nil? %>

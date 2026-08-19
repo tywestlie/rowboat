@@ -1,25 +1,26 @@
 <%
   nav_items = [
+    [:ask, "Ask", ask_path],
     [:systems, "Star Systems", systems_path],
     [:exoplanets, "All Planets", exoplanets_path],
     [:random, "Surprise Me", random_exoplanet_path],
-    [:extremes, "Extremes", extremes_path],
-    [:ask, "Ask", ask_path]
+    [:extremes, "Extremes", extremes_path]
   ]
 %>
 <nav class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-grid-line bg-panel px-4 py-3 sm:px-6">
-  <%= link_to root_path, class: "inline-flex items-center gap-2 font-display text-base font-semibold tracking-tight text-signal hover:text-amber sm:text-lg" do %>
-    <%= render "shared/logo", size: 26 %>
-    Parallax
-  <% end %>
+  <%= render "shared/brand_link" %>
 
   <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
     <% nav_items.each do |key, label, path| %>
-      <% is_active = key == active %>
-      <%= link_to label, path, class: [
-            "inline-flex min-h-11 items-center border-b-2 pb-0.5",
-            is_active ? "border-amber font-semibold text-amber" : "border-transparent text-muted hover:text-signal"
-          ].join(" ") %>
+      <% if key == :ask %>
+        <%= link_to label, path, class: "inline-flex min-h-11 items-center rounded-md bg-amber px-4 py-1.5 font-medium text-space-navy transition hover:brightness-110" %>
+      <% else %>
+        <% is_active = key == active %>
+        <%= link_to label, path, class: [
+              "inline-flex min-h-11 items-center border-b-2 pb-0.5",
+              is_active ? "border-amber font-semibold text-amber" : "border-transparent text-muted hover:text-signal"
+            ].join(" ") %>
+      <% end %>
     <% end %>
   </div>
 </nav>
