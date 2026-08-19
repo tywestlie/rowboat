@@ -1,8 +1,13 @@
 <% content_for :title, "Parallax" %>
 
 <section class="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
+  <div class="flex flex-col items-center gap-4">
+    <%= render "shared/logo", size: 96 %>
+    <h1 class="font-display text-4xl font-semibold tracking-tight text-signal sm:text-5xl lg:text-6xl">Parallax</h1>
+  </div>
+
   <div class="flex flex-col items-center gap-3">
-    <h1 class="font-display text-4xl font-semibold tracking-tight text-signal sm:text-5xl lg:text-6xl">Ask anything about the exoplanet catalog</h1>
+    <h2 class="font-display text-2xl font-semibold tracking-tight text-signal sm:text-3xl">Ask anything about the exoplanet catalog</h2>
     <p class="max-w-xl text-muted">Plain-English questions about confirmed exoplanets and their host stars, answered from real NASA archive data.</p>
   </div>
 
