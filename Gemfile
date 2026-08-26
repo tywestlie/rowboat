@@ -23,7 +23,7 @@ gem "csv"
 gem "pry"
 
 # Claude API client for natural-language query generation [https://github.com/anthropics/anthropic-sdk-ruby]
-gem "anthropic", "~> 1.62"
+gem "anthropic", "~> 1.65"
 
 # Pagination for dataset row browsing [https://github.com/kaminari/kaminari]
 gem "kaminari"
