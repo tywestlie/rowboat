@@ -25,7 +25,9 @@ Takeaway: whenever a gem's changelog mentions a new "requires X" dependency, che
 
 ---
 
-## Networking and infrastructure
+## Networking and infrastructure (lessons from the AWS deployment, historical)
+
+The entries in this section were logged while running on ECS Fargate/RDS/ALB, per `terraform/`. That deployment has been replaced by a DigitalOcean Droplet running Docker Compose (see `CLAUDE.md`), so anything VPC-, ECR-, or ALB-specific below no longer applies to the live environment. Kept as documented experience, not as active troubleshooting steps.
 
 **ECR image pulls timing out from a private subnet**
 Symptom: `CannotPullContainerError ... i/o timeout` when a container tries to pull from ECR.
@@ -53,7 +55,9 @@ Takeaway: changing one environment variable can have a cascading effect on defau
 
 ---
 
-## DNS and certificates
+## DNS and certificates (mixed: general lessons still relevant, ACM entry is AWS-specific/historical)
+
+The DNS-caching and dashboard-vs-resolver lessons below are still directly relevant on the current DigitalOcean setup (Cloudflare DNS is unchanged). The ACM entry is specific to the retired AWS deployment; `caddy-docker-proxy` now handles certificate issuance/renewal automatically via Let's Encrypt and hasn't hit an equivalent issue so far.
 
 **DNS record technically exists but doesn't resolve**
 Symptom: `NXDOMAIN` or timeout for a record visible in the DNS provider's dashboard.
@@ -100,6 +104,16 @@ Symptom: no new checks appear for any push, not tied to any single PR.
 Cause: sometimes it's genuinely nothing on your end, the CI provider is having a platform-wide outage.
 Fix: check the provider's public status page directly before spending time debugging your own config. If confirmed, have a manual fallback path (running checks locally, deploying by hand) ready so an outage doesn't fully block you.
 Takeaway: rule out "is the platform actually down" early when everything you can control checks out clean, and keep a manual escape hatch for your critical paths (like deployment) that doesn't depend on any single automation provider.
+
+---
+
+## Database and background jobs
+
+**`db:prepare` succeeds but Solid Queue/Cache/Cable tables never get created**
+Symptom: deploy's `db:prepare` step completes with no errors, but background jobs fail at runtime referencing missing Solid Queue tables. Running `bin/rails db:migrate:queue` directly then reveals there are no pending migrations to run at all, not that they failed.
+Cause: the migration directories for Solid Queue/Cache/Cable (`db/queue_migrate`, `db/cache_migrate`, `db/cable_migrate`) were never actually committed to git, likely dropped during an earlier cleanup or `.gitignore` pattern that was too broad. `db:prepare` silently has nothing to run against an empty migration directory, so it exits successfully without creating the schema.
+Fix: regenerate the missing migrations (`bin/rails solid_queue:install`, `solid_cache:install`, `solid_cable:install`, or restore them from the gem's generators) and commit the resulting migration directories to git so they're present in the deployed checkout.
+Takeaway: a task exiting 0 doesn't mean it did anything, "no migrations to run" and "ran all migrations successfully" look identical from a clean exit code. When a `*_migrate` or similar directory is expected to exist, verify it's actually tracked in git, not just present locally, since a missing directory produces no error either.
 
 ---
 

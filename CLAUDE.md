@@ -11,9 +11,11 @@ The repo/app is currently named "rowboat" (a leftover pun: "row" as in CSV rows,
 ## Current architecture
 
 - Ruby on Rails 8.1, PostgreSQL, RSpec (not Minitest, was migrated deliberately)
-- Deployed on AWS: ECS Fargate, RDS, ALB, all defined in `terraform/`
-- CI/CD via GitHub Actions: `ci.yml` (tests/lint/security scans) triggers automatically, `deploy.yml` triggers via `workflow_run` after CI passes on `main`
+- Deployed on a self-managed DigitalOcean Droplet (`westlie-cloud-01`, Kansas City region) running Docker Compose. `caddy-docker-proxy` handles automatic HTTPS via Docker labels on each service, no separate load balancer. Postgres is a shared instance (`shared-postgres-1`) on the same droplet, serving a per-app database rather than a dedicated RDS instance. Each app, including this one, runs its own worker service for Solid Queue alongside the web service.
+- `terraform/` still exists in the repo documenting the previous AWS architecture (ECS Fargate, RDS, ALB) but is no longer the active deployment; see the Deployment section below.
+- CI/CD via GitHub Actions: `ci.yml` (tests/lint/security scans) triggers automatically; `deploy-droplet.yml` triggers via `workflow_run` after CI passes on `main` and deploys over SSH
 - Dependabot configured with auto-merge for patch/minor bumps only; major bumps require manual review (this already caught a real breaking change once, don't loosen this)
+- Secrets (Anthropic API key, AI access code, etc.) live in a gitignored `.env` file on the droplet, not AWS Secrets Manager
 
 ## Data model
 
@@ -50,8 +52,8 @@ No `User` model currently exists. Auth was deliberately deferred until the core 
 - Rake tasks `datasets:import_exoplanets` and `datasets:import_stellar_hosts` (`lib/tasks/import_datasets.rake`) to trigger them
 - Browsing UI, no `DatasetsController` (that was the original plan; it ended up split by resource instead): `HomeController#index` (root), `SystemsController#index`/`#show` (star systems list and per-system detail, `kaminari`-paginated, starfield chart), `ExoplanetsController#index`/`#show`/`#random`, `ExtremesController#index` (leaderboards: hottest, coldest, closest-to-Earth-size, most recent, closest-to-Earth)
 - The AI query feature: natural-language question → LLM translates to a structured query (filter/aggregate spec, NOT raw SQL, this was a deliberate choice, "Option A" in earlier planning) → execute against the typed tables (`Exoplanet`, `StellarHost`) via a whitelisted `QueryTranslator` → return answer + visualization. Gated behind a session-based access code (`AiAccessController`, `AiAuthorization` concern, `AiCredentials` module for the code and Anthropic API key). See `app/jobs/answer_question_job.rb`, `app/services/query_translator.rb`, `app/services/query_executor.rb`, `app/models/queryable_fields.rb`, `app/controllers/questions_controller.rb`. Uses the `anthropic` gem (~> 1.62).
-- A separate ECS service (`rowboat-worker-service`, `terraform/ecs_worker.tf`) runs Solid Queue background job processing via `./bin/jobs`
-- ECS Exec is enabled for production debugging (`dangerzone` / `dangerzone-bash` bash functions in `~/.bashrc` exec into the live task)
+- A separate worker service (part of the droplet's Docker Compose setup) runs Solid Queue background job processing via `./bin/jobs`
+- For a production shell: `ssh` into `westlie-cloud-01`, then `docker compose exec web bash` (or `rails console`) from `/srv/rowboat`, replacing the old ECS Exec / `dangerzone` workflow
 
 ## What's next (in planned order)
 
@@ -82,12 +84,11 @@ bin/bundler-audit        # dependency vuln scan
 
 ## Deployment
 
-```bash
-cd terraform
-terraform apply
-```
+Push to `main` → `ci.yml` runs → on success, `deploy-droplet.yml` SSHes into `westlie-cloud-01` and runs `/srv/rowboat/deploy.sh`, which pulls the latest code, rebuilds the image, runs `db:prepare`, and brings the stack back up via Docker Compose.
 
-Day-to-day pause/resume uses partial scale-down (ECS desired-count 0, RDS stopped), NOT full `terraform destroy`, since a full destroy recreates the ALB with a new DNS name and requires updating the Cloudflare CNAME record manually each time. See `pause-resume-runbook.md` for the exact commands.
+`terraform/` remains in the repo as a documented reference for the previous AWS architecture but does not describe the running deployment; don't run `terraform apply` expecting it to affect production. AWS infrastructure is being decommissioned separately.
+
+See `pause-resume-runbook.md` for day-to-day pause/resume guidance (now marked historical, see the note at the top of that file).
 
 ## Agent skills
 

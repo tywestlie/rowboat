@@ -7,7 +7,7 @@ An AI-powered data explorer for public astronomy datasets. Import real data (sta
 - Ruby on Rails 8.1
 - PostgreSQL
 - RSpec for testing
-- Deployed on AWS (ECS Fargate, RDS, ALB) via Terraform
+- Deployed on a self-managed DigitalOcean Droplet via Docker Compose, with `caddy-docker-proxy` for automatic HTTPS
 - CI/CD via GitHub Actions
 
 ## Features
@@ -50,9 +50,10 @@ Pulls live data from NASA's Exoplanet Archive and seeds it into the database.
 
 ## Deployment
 
-Infrastructure is defined in `terraform/`. The app deploys automatically to AWS via GitHub Actions on merge to `main`, after CI passes.
+The app runs on a self-managed DigitalOcean Droplet via Docker Compose. On merge to `main`, after CI passes, GitHub Actions (`deploy-droplet.yml`) SSHes into the server and runs its deploy script:
 
 ```bash
-cd terraform
-terraform apply
+/srv/rowboat/deploy.sh
 ```
+
+`terraform/` still exists in the repo as a reference for a previous AWS-based architecture, but no longer describes the active deployment.
