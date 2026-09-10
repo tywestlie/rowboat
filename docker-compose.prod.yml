@@ -1,0 +1,22 @@
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - web
+    labels:
+      caddy: parallax.westlie.dev
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: bin/jobs
+    env_file: .env
+    networks:
+      - web
+
+networks:
+  web:
+    external: true

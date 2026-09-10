@@ -1,6 +1,6 @@
 # Consolidate the Solid Queue worker into Puma
 
-Status: accepted
+Status: superseded by [ADR-0003](0003-restore-worker-service-and-track-prod-compose.md)
 
 Supersedes [ADR-0001](0001-separate-ecs-worker-service-for-solid-queue.md).
 
