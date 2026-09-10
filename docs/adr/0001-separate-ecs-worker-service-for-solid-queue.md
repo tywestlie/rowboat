@@ -1,6 +1,6 @@
 # Separate ECS worker service for Solid Queue
 
-Status: accepted
+Status: superseded by [ADR-0002](0002-consolidate-worker-into-puma.md)
 
 Production has no Solid Queue supervisor running: `SOLID_QUEUE_IN_PUMA` is only set in `config/deploy.yml` (Kamal), which isn't the actual deploy path, and the ECS task definition's `environment` block never sets it. Jobs enqueued via `perform_later` currently sit unprocessed.
 
