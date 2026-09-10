@@ -105,6 +105,12 @@ Cause: sometimes it's genuinely nothing on your end, the CI provider is having a
 Fix: check the provider's public status page directly before spending time debugging your own config. If confirmed, have a manual fallback path (running checks locally, deploying by hand) ready so an outage doesn't fully block you.
 Takeaway: rule out "is the platform actually down" early when everything you can control checks out clean, and keep a manual escape hatch for your critical paths (like deployment) that doesn't depend on any single automation provider.
 
+**Droplet becomes completely unreachable (SSH, HTTP, HTTPS all hang) after a run of deploys**
+Symptom: several commits pushed to `main` in quick succession; each triggered deploy took longer than the last (10min, then 25min, then hung until SSH itself reset the connection), then the droplet stopped responding to SSH, port 80, and port 443 entirely, TCP handshakes completed but nothing answered afterward.
+Cause: `deploy-droplet.yml` had no `concurrency` group and `deploy.sh` had no lock, so when CI for several close-together commits finished around the same time, multiple deploy workflow runs SSHed in and ran `docker compose build` concurrently on the same box. The droplet only has 2 CPUs, ~2GB RAM, and no swap, so two or three concurrent `bundle install`/bootsnap/`assets:precompile` builds exhausted memory and the box effectively locked up. A one-off `git reset`/reboot of the droplet was needed to recover since SSH itself was unresponsive.
+Fix: add a `concurrency` group to `deploy-droplet.yml` (queue deploys instead of running them in parallel) and a `flock` lock in `deploy.sh` as a second guard against overlapping runs.
+Takeaway: a deploy script that's safe to run once is not automatically safe to run twice at the same time, check for concurrency guards on any pipeline that SSHes into a shared, resource-constrained box, especially one with no swap configured.
+
 ---
 
 ## Database and background jobs
